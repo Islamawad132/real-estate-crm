@@ -1,25 +1,9 @@
-import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import type { Request } from 'express';
-
-export interface AuthenticatedUser {
-  sub: string;
-  email: string;
-  name?: string;
-  roles?: string[];
-  realm?: string;
-}
-
 /**
- * Parameter decorator that extracts the authenticated user from the request.
+ * Re-exports from the central auth module.
  *
- * Usage:
- *   @Get('profile')
- *   getProfile(@CurrentUser() user: AuthenticatedUser) { ... }
+ * This file is kept for backward compatibility so that existing feature
+ * controllers can continue to import CurrentUser and AuthenticatedUser
+ * from their relative '../common/decorators/current-user.decorator.js' path.
  */
-export const CurrentUser = createParamDecorator(
-  (data: keyof AuthenticatedUser | undefined, ctx: ExecutionContext) => {
-    const request = ctx.switchToHttp().getRequest<Request & { user?: AuthenticatedUser }>();
-    const user = request.user;
-    return data ? user?.[data] : user;
-  },
-);
+export { CurrentUser } from '../../auth/decorators/current-user.decorator.js';
+export type { AuthenticatedUser } from '../../auth/interfaces/authenticated-user.interface.js';

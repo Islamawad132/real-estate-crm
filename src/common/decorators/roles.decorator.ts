@@ -1,24 +1,9 @@
-import { SetMetadata } from '@nestjs/common';
-
-export const IS_PUBLIC_KEY = 'isPublic';
-export const ROLES_KEY = 'roles';
-
 /**
- * Marks a route as publicly accessible — bypasses AuthGuard.
+ * Re-exports from the central auth module.
  *
- * Usage:
- *   @Public()
- *   @Get('health')
- *   health() { ... }
+ * This file is kept for backward compatibility so that existing feature
+ * controllers can continue to import Public and Roles from their relative
+ * '../common/decorators/roles.decorator.js' path.
  */
-export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
-
-/**
- * Restricts a route to users with the specified roles.
- *
- * Usage:
- *   @Roles('admin', 'agent')
- *   @Get('listings')
- *   getListings() { ... }
- */
-export const Roles = (...roles: string[]) => SetMetadata(ROLES_KEY, roles);
+export { Public, IS_PUBLIC_KEY } from '../../auth/decorators/public.decorator.js';
+export { Roles, ROLES_KEY } from '../../auth/decorators/roles.decorator.js';

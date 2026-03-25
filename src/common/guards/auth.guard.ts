@@ -1,42 +1,13 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import type { Request } from 'express';
-import { IS_PUBLIC_KEY } from '../decorators/roles.decorator.js';
-
 /**
- * AuthGuard — placeholder that validates a Bearer JWT issued by Authme.
+ * Re-exports from the central auth module.
  *
- * Full implementation will be added in the Auth module (Issue #2).
- * Routes decorated with @Public() bypass this guard entirely.
+ * This file is kept for backward compatibility so that existing feature
+ * controllers can continue to import AuthGuard from their relative
+ * '../common/guards/auth.guard.js' path.
+ *
+ * The real implementation lives in src/auth/guards/jwt-auth.guard.ts.
+ * Note: controllers that use @UseGuards(AuthGuard) will now bind the real
+ * JWT guard.  The global APP_GUARD in AppModule also ensures every route
+ * is protected without needing the per-controller @UseGuards decorator.
  */
-@Injectable()
-export class AuthGuard implements CanActivate {
-  constructor(private readonly reflector: Reflector) {}
-
-  canActivate(context: ExecutionContext): boolean {
-    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
-
-    if (isPublic) {
-      return true;
-    }
-
-    const request = context.switchToHttp().getRequest<Request>();
-    const authHeader = request.headers['authorization'];
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedException('Missing or invalid Authorization header');
-    }
-
-    // TODO (Issue #2): validate JWT against Authme JWKS endpoint
-    // and attach the decoded payload to request.user
-    return true;
-  }
-}
+export { JwtAuthGuard as AuthGuard } from '../../auth/guards/jwt-auth.guard.js';

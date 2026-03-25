@@ -8,6 +8,12 @@ datasource db {
 
 // ─── Enums ───────────────────────────────────────────────────────────
 
+enum UserRole {
+  ADMIN
+  MANAGER
+  AGENT
+}
+
 enum PropertyType {
   APARTMENT
   VILLA
@@ -114,6 +120,28 @@ enum ActivityEntityType {
 
 // ─── Models ──────────────────────────────────────────────────────────
 
+model User {
+  id          String    @id @default(uuid())
+  authmeId    String    @unique
+  email       String    @unique
+  firstName   String?
+  lastName    String?
+  role        UserRole  @default(AGENT)
+  isActive    Boolean   @default(true)
+  lastLoginAt DateTime?
+
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  assignedProperties Property[] @relation("PropertyAgent")
+  assignedClients    Client[]   @relation("ClientAgent")
+  assignedLeads      Lead[]     @relation("LeadAgent")
+
+  @@index([authmeId])
+  @@index([role])
+  @@map("users")
+}
+
 model Property {
   id              String           @id @default(uuid())
   title           String
@@ -132,6 +160,7 @@ model Property {
   longitude       Decimal?         @db.Decimal(10, 7)
   features        Json?
   assignedAgentId String?
+  assignedAgent   User?            @relation("PropertyAgent", fields: [assignedAgentId], references: [id], onDelete: SetNull)
 
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
@@ -175,6 +204,7 @@ model Client {
   source          ClientSource @default(OTHER)
   notes           String?
   assignedAgentId String?
+  assignedAgent   User?        @relation("ClientAgent", fields: [assignedAgentId], references: [id], onDelete: SetNull)
 
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
@@ -200,6 +230,7 @@ model Lead {
   budget          Decimal?     @db.Decimal(14, 2)
   notes           String?
   assignedAgentId String?
+  assignedAgent   User?        @relation("LeadAgent", fields: [assignedAgentId], references: [id], onDelete: SetNull)
   nextFollowUp    DateTime?
 
   createdAt       DateTime     @default(now())

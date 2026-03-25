@@ -3,6 +3,8 @@ import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { PrismaModule } from './prisma/prisma.module.js';
+import { AuthModule } from './auth/auth.module.js';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard.js';
 import { ClientsModule } from './clients/clients.module.js';
 import { PropertiesModule } from './properties/properties.module.js';
 import { ContractsModule } from './contracts/contracts.module.js';
@@ -24,6 +26,9 @@ import { EmailModule } from './email/email.module.js';
       },
     ]),
     PrismaModule,
+    // AuthModule must be imported before feature modules so the global guard
+    // and AuthService are available throughout the dependency graph.
+    AuthModule,
     ClientsModule,
     PropertiesModule,
     ContractsModule,
@@ -36,9 +41,16 @@ import { EmailModule } from './email/email.module.js';
     EmailModule,
   ],
   providers: [
+    // Rate limiting — applied first, before auth
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    // Global JWT authentication — all routes require a valid Authme token
+    // unless decorated with @Public()
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
     },
   ],
 })
