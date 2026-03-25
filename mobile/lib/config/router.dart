@@ -1,0 +1,74 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../providers/auth_provider.dart';
+import '../screens/auth/login_screen.dart';
+import '../screens/dashboard/dashboard_screen.dart';
+import '../screens/properties/properties_screen.dart';
+import '../screens/leads/leads_screen.dart';
+import '../screens/clients/clients_screen.dart';
+import '../screens/profile/profile_screen.dart';
+import '../widgets/app_shell.dart';
+
+final _rootNavigatorKey = GlobalKey<NavigatorState>();
+final _shellNavigatorKey = GlobalKey<NavigatorState>();
+
+final routerProvider = Provider<GoRouter>((ref) {
+  final authState = ref.watch(authStateProvider);
+
+  return GoRouter(
+    navigatorKey: _rootNavigatorKey,
+    initialLocation: '/dashboard',
+    redirect: (context, state) {
+      final isAuthenticated = authState.valueOrNull?.isAuthenticated ?? false;
+      final isLoggingIn = state.matchedLocation == '/login';
+
+      if (!isAuthenticated && !isLoggingIn) return '/login';
+      if (isAuthenticated && isLoggingIn) return '/dashboard';
+      return null;
+    },
+    routes: [
+      GoRoute(
+        path: '/login',
+        builder: (context, state) => const LoginScreen(),
+      ),
+      ShellRoute(
+        navigatorKey: _shellNavigatorKey,
+        builder: (context, state, child) => AppShell(child: child),
+        routes: [
+          GoRoute(
+            path: '/dashboard',
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: DashboardScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/properties',
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: PropertiesScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/leads',
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: LeadsScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/clients',
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: ClientsScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/profile',
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: ProfileScreen(),
+            ),
+          ),
+        ],
+      ),
+    ],
+  );
+});
