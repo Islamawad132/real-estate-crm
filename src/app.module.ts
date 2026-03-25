@@ -9,6 +9,7 @@ import { ContractsModule } from './contracts/contracts.module.js';
 import { InvoicesModule } from './invoices/invoices.module.js';
 import { LeadsModule } from './leads/leads.module.js';
 import { PdfModule } from './pdf/pdf.module.js';
+import { ActivitiesModule } from './activities/activities.module.js';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { PdfModule } from './pdf/pdf.module.js';
     InvoicesModule,
     LeadsModule,
     PdfModule,
+    ActivitiesModule,
   ],
   providers: [
     {
