@@ -30,12 +30,12 @@ export class ContractFilterDto extends PaginationDto {
   @IsString()
   agentId?: string;
 
-  @ApiPropertyOptional({ description: 'Start date from (ISO 8601)' })
+  @ApiPropertyOptional({ description: 'Start date from (ISO 8601)', example: '2026-01-01' })
   @IsOptional()
   @IsDateString()
   dateFrom?: string;
 
-  @ApiPropertyOptional({ description: 'Start date to (ISO 8601)' })
+  @ApiPropertyOptional({ description: 'Start date to (ISO 8601)', example: '2026-12-31' })
   @IsOptional()
   @IsDateString()
   dateTo?: string;

@@ -10,15 +10,15 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // Security middleware
+  // Security middleware — relax CSP for Swagger UI at /api/docs
   app.use(
     helmet({
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
-          scriptSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'"],
           styleSrc: ["'self'", "'unsafe-inline'"],
-          imgSrc: ["'self'", 'data:', 'blob:'],
+          imgSrc: ["'self'", 'data:', 'blob:', 'https://validator.swagger.io'],
           connectSrc: ["'self'"],
         },
       },
@@ -53,9 +53,28 @@ async function bootstrap() {
   // Swagger / OpenAPI at /api/docs
   const config = new DocumentBuilder()
     .setTitle('Real Estate CRM API')
-    .setDescription('Backend API for the Real Estate CRM platform')
+    .setDescription(
+      'Backend API for the Real Estate CRM platform.\n\n' +
+        'Manages properties, clients, leads, contracts, invoices, and agent activities.\n\n' +
+        'All protected endpoints require a Bearer token (JWT) from Authme IAM.',
+    )
     .setVersion('1.0.0')
-    .addBearerAuth()
+    .setContact('Real Estate CRM', '', '')
+    .setLicense('Private', '')
+    .addBearerAuth(
+      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT', description: 'Authme JWT token' },
+      'bearer',
+    )
+    .addTag('Properties', 'Property listings management')
+    .addTag('Clients', 'Client records management')
+    .addTag('Leads', 'Lead pipeline and tracking')
+    .addTag('Contracts', 'Contract lifecycle management')
+    .addTag('Invoices', 'Invoice and payment management')
+    .addTag('Activities', 'Audit trail and activity logs')
+    .addTag('PDF Generation', 'Generate PDF documents')
+    .addTag('Property Images', 'Upload and manage property images')
+    .addTag('Contract Documents', 'Upload contract documents')
+    .addTag('File Serving', 'Serve uploaded files')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
