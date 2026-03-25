@@ -3,6 +3,7 @@ import {
   Get,
   Query,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -10,6 +11,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { DashboardService } from './dashboard.service.js';
 import { DateRangeDto } from './dto/date-range.dto.js';
 import { CurrentUser, type AuthenticatedUser } from '../common/decorators/current-user.decorator.js';
@@ -27,6 +29,8 @@ export class DashboardController {
 
   @Get('admin/overview')
   @Roles('admin', 'manager')
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(60_000)
   @ApiOperation({ summary: 'Admin overview — totals and period stats' })
   @ApiResponse({ status: 200, description: 'Overview statistics' })
   getAdminOverview(@Query() dateRange: DateRangeDto) {
@@ -35,6 +39,8 @@ export class DashboardController {
 
   @Get('admin/revenue')
   @Roles('admin', 'manager')
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(120_000)
   @ApiOperation({ summary: 'Revenue over time with period comparison' })
   @ApiResponse({ status: 200, description: 'Revenue timeline and totals' })
   getAdminRevenue(@Query() dateRange: DateRangeDto) {
@@ -43,6 +49,8 @@ export class DashboardController {
 
   @Get('admin/leads')
   @Roles('admin', 'manager')
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(60_000)
   @ApiOperation({ summary: 'Lead pipeline summary' })
   @ApiResponse({ status: 200, description: 'Lead pipeline statistics' })
   getAdminLeads(@Query() dateRange: DateRangeDto) {
@@ -51,6 +59,8 @@ export class DashboardController {
 
   @Get('admin/properties')
   @Roles('admin', 'manager')
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(120_000)
   @ApiOperation({ summary: 'Properties breakdown by status and type' })
   @ApiResponse({ status: 200, description: 'Property statistics' })
   getAdminProperties() {
@@ -59,6 +69,8 @@ export class DashboardController {
 
   @Get('admin/agents')
   @Roles('admin', 'manager')
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(60_000)
   @ApiOperation({ summary: 'Agent performance — leads won and revenue' })
   @ApiResponse({ status: 200, description: 'Agent performance data' })
   getAdminAgents(@Query() dateRange: DateRangeDto) {

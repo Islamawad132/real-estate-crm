@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { CacheModule } from '@nestjs/cache-manager';
 import { DashboardController } from './dashboard.controller.js';
 import { DashboardService } from './dashboard.service.js';
 import { DateRangePreset } from './dto/date-range.dto.js';
@@ -34,6 +35,7 @@ describe('DashboardController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [CacheModule.register()],
       controllers: [DashboardController],
       providers: [{ provide: DashboardService, useValue: mockService }],
     }).compile();

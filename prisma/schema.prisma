@@ -143,6 +143,8 @@ model Property {
   @@index([status, assignedAgentId])
   @@index([type, status])
   @@index([city, region])
+  @@index([price])
+  @@index([area])
   @@index([createdAt])
   @@map("properties")
 }
@@ -183,6 +185,7 @@ model Client {
   @@unique([email])
   @@unique([phone])
   @@index([type, assignedAgentId])
+  @@index([source])
   @@index([createdAt])
   @@map("clients")
 }
@@ -274,6 +277,7 @@ model Invoice {
   contract      Contract      @relation(fields: [contractId], references: [id], onDelete: Restrict)
 
   @@index([status])
+  @@index([status, paidDate])
   @@index([dueDate])
   @@index([contractId])
   @@index([createdAt])
