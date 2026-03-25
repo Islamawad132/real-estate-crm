@@ -6,6 +6,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
 import { ClientsModule } from './clients/clients.module.js';
 import { PropertiesModule } from './properties/properties.module.js';
 import { ContractsModule } from './contracts/contracts.module.js';
+import { InvoicesModule } from './invoices/invoices.module.js';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { ContractsModule } from './contracts/contracts.module.js';
     ClientsModule,
     PropertiesModule,
     ContractsModule,
+    InvoicesModule,
   ],
   providers: [
     {
