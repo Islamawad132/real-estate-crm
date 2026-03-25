@@ -8,6 +8,7 @@ import { PropertiesModule } from './properties/properties.module.js';
 import { ContractsModule } from './contracts/contracts.module.js';
 import { InvoicesModule } from './invoices/invoices.module.js';
 import { LeadsModule } from './leads/leads.module.js';
+import { PdfModule } from './pdf/pdf.module.js';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { LeadsModule } from './leads/leads.module.js';
     ContractsModule,
     InvoicesModule,
     LeadsModule,
+    PdfModule,
   ],
   providers: [
     {
