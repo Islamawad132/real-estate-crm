@@ -11,6 +11,7 @@ import { LeadsModule } from './leads/leads.module.js';
 import { PdfModule } from './pdf/pdf.module.js';
 import { ActivitiesModule } from './activities/activities.module.js';
 import { UploadsModule } from './uploads/uploads.module.js';
+import { DashboardModule } from './dashboard/dashboard.module.js';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { UploadsModule } from './uploads/uploads.module.js';
     PdfModule,
     ActivitiesModule,
     UploadsModule,
+    DashboardModule,
   ],
   providers: [
     {
