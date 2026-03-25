@@ -5,6 +5,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { ClientsModule } from './clients/clients.module.js';
 import { PropertiesModule } from './properties/properties.module.js';
+import { ContractsModule } from './contracts/contracts.module.js';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { PropertiesModule } from './properties/properties.module.js';
     PrismaModule,
     ClientsModule,
     PropertiesModule,
+    ContractsModule,
   ],
   providers: [
     {
