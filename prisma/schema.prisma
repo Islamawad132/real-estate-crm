@@ -308,3 +308,46 @@ model Setting {
 
   @@map("settings")
 }
+
+// ─── Email ──────────────────────────────────────────────────────────
+
+enum EmailStatus {
+  QUEUED
+  SENDING
+  SENT
+  FAILED
+}
+
+model EmailLog {
+  id          String      @id @default(uuid())
+  to          String
+  subject     String
+  template    String
+  context     Json?
+  status      EmailStatus @default(QUEUED)
+  attempts    Int         @default(0)
+  lastError   String?
+  sentAt      DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("email_logs")
+}
+
+model EmailPreference {
+  id                    String   @id @default(uuid())
+  userId                String   @unique
+  leadAssignment        Boolean  @default(true)
+  followUpReminder      Boolean  @default(true)
+  contractUpdates       Boolean  @default(true)
+  invoiceReminder       Boolean  @default(true)
+  paymentConfirmation   Boolean  @default(true)
+  weeklySummary         Boolean  @default(true)
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("email_preferences")
+}

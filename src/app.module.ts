@@ -12,6 +12,7 @@ import { PdfModule } from './pdf/pdf.module.js';
 import { ActivitiesModule } from './activities/activities.module.js';
 import { UploadsModule } from './uploads/uploads.module.js';
 import { DashboardModule } from './dashboard/dashboard.module.js';
+import { EmailModule } from './email/email.module.js';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { DashboardModule } from './dashboard/dashboard.module.js';
     ActivitiesModule,
     UploadsModule,
     DashboardModule,
+    EmailModule,
   ],
   providers: [
     {
