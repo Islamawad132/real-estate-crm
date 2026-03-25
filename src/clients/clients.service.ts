@@ -67,7 +67,7 @@ export class ClientsService {
   }
 
   async update(id: string, dto: UpdateClientDto) {
-    await this.findOne(id);
+    await this.ensureExists(id);
 
     if (dto.email || dto.phone) {
       await this.checkDuplicates(dto.email, dto.phone, id);
@@ -80,13 +80,13 @@ export class ClientsService {
   }
 
   async remove(id: string) {
-    await this.findOne(id);
+    await this.ensureExists(id);
 
     return this.prisma.client.delete({ where: { id } });
   }
 
   async assignAgent(id: string, agentId: string) {
-    await this.findOne(id);
+    await this.ensureExists(id);
 
     return this.prisma.client.update({
       where: { id },
@@ -95,7 +95,7 @@ export class ClientsService {
   }
 
   async getHistory(id: string) {
-    await this.findOne(id);
+    await this.ensureExists(id);
 
     const [leads, contracts] = await Promise.all([
       this.prisma.lead.findMany({
@@ -138,6 +138,16 @@ export class ClientsService {
       byType: byType.map((g) => ({ type: g.type, count: g._count })),
       bySource: bySource.map((g) => ({ source: g.source, count: g._count })),
     };
+  }
+
+  private async ensureExists(id: string) {
+    const exists = await this.prisma.client.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+    if (!exists) {
+      throw new NotFoundException(`Client with ID "${id}" not found`);
+    }
   }
 
   private buildWhereClause(
