@@ -9,6 +9,7 @@ import {
   Post,
   Put,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -24,9 +25,11 @@ import { ClientFilterDto } from './dto/client-filter.dto.js';
 import { AssignAgentDto } from './dto/assign-agent.dto.js';
 import { CurrentUser, type AuthenticatedUser } from '../common/decorators/current-user.decorator.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
+import { AuthGuard } from '../common/guards/auth.guard.js';
 
 @ApiTags('Clients')
 @ApiBearerAuth()
+@UseGuards(AuthGuard)
 @Controller('api/clients')
 export class ClientsController {
   constructor(private readonly clientsService: ClientsService) {}
@@ -45,19 +48,19 @@ export class ClientsController {
     @Query() filter: ClientFilterDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    const isAdminOrManager = user?.roles?.some((r) =>
+    const isAdminOrManager = user.roles?.some((r) =>
       ['admin', 'manager'].includes(r),
     ) ?? false;
-    return this.clientsService.findAll(filter, user?.sub, isAdminOrManager);
+    return this.clientsService.findAll(filter, user.sub, isAdminOrManager);
   }
 
   @Get('stats')
   @ApiOperation({ summary: 'Get client statistics' })
   getStats(@CurrentUser() user: AuthenticatedUser) {
-    const isAdminOrManager = user?.roles?.some((r) =>
+    const isAdminOrManager = user.roles?.some((r) =>
       ['admin', 'manager'].includes(r),
     ) ?? false;
-    return this.clientsService.getStats(user?.sub, isAdminOrManager);
+    return this.clientsService.getStats(user.sub, isAdminOrManager);
   }
 
   @Get(':id')
