@@ -7,6 +7,7 @@ import { ClientsModule } from './clients/clients.module.js';
 import { PropertiesModule } from './properties/properties.module.js';
 import { ContractsModule } from './contracts/contracts.module.js';
 import { InvoicesModule } from './invoices/invoices.module.js';
+import { LeadsModule } from './leads/leads.module.js';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { InvoicesModule } from './invoices/invoices.module.js';
     PropertiesModule,
     ContractsModule,
     InvoicesModule,
+    LeadsModule,
   ],
   providers: [
     {
