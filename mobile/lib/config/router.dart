@@ -6,6 +6,7 @@ import '../providers/auth_provider.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/properties/properties_screen.dart';
+import '../screens/properties/property_detail_screen.dart';
 import '../screens/leads/leads_screen.dart';
 import '../screens/clients/clients_screen.dart';
 import '../screens/profile/profile_screen.dart';
@@ -48,6 +49,15 @@ final routerProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) => const NoTransitionPage(
               child: PropertiesScreen(),
             ),
+            routes: [
+              GoRoute(
+                path: ':id',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) => PropertyDetailScreen(
+                  propertyId: state.pathParameters['id']!,
+                ),
+              ),
+            ],
           ),
           GoRoute(
             path: '/leads',
