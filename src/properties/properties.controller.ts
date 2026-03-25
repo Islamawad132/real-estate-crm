@@ -27,6 +27,7 @@ import { AssignAgentDto } from '../clients/dto/assign-agent.dto.js';
 import { CurrentUser, type AuthenticatedUser } from '../common/decorators/current-user.decorator.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
 import { AuthGuard } from '../common/guards/auth.guard.js';
+import { FullTextSearchDto } from './dto/full-text-search.dto.js';
 
 @ApiTags('Properties')
 @ApiBearerAuth()
@@ -53,6 +54,25 @@ export class PropertiesController {
       ['admin', 'manager'].includes(r),
     ) ?? false;
     return this.propertiesService.findAll(filter, user?.sub, isAdminOrManager);
+  }
+
+  @Get('search')
+  @ApiOperation({ summary: 'Full-text search properties using PostgreSQL tsvector' })
+  @ApiResponse({ status: 200, description: 'Search results with cursor pagination' })
+  fullTextSearch(
+    @Query() dto: FullTextSearchDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    const isAdminOrManager = user?.roles?.some((r) =>
+      ['admin', 'manager'].includes(r),
+    ) ?? false;
+    return this.propertiesService.fullTextSearch(
+      dto.q,
+      dto.cursor,
+      dto.take,
+      user?.sub,
+      isAdminOrManager,
+    );
   }
 
   @Get('stats')
