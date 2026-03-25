@@ -10,6 +10,7 @@ import { InvoicesModule } from './invoices/invoices.module.js';
 import { LeadsModule } from './leads/leads.module.js';
 import { PdfModule } from './pdf/pdf.module.js';
 import { ActivitiesModule } from './activities/activities.module.js';
+import { UploadsModule } from './uploads/uploads.module.js';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { ActivitiesModule } from './activities/activities.module.js';
     LeadsModule,
     PdfModule,
     ActivitiesModule,
+    UploadsModule,
   ],
   providers: [
     {

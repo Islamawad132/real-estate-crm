@@ -58,6 +58,9 @@ mobile/ios/Pods/
 mobile/ios/.symlinks/
 mobile/ios/Flutter/.last_build_id
 
+# Uploads (runtime upload directory at project root)
+/uploads/
+
 # Test
 .jest-cache/
 
