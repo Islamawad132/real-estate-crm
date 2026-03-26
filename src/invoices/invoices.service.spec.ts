@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { InvoicesService } from './invoices.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { InvoiceStatus, PaymentMethod } from '@prisma/client';
@@ -7,6 +8,7 @@ import { InvoiceStatus, PaymentMethod } from '@prisma/client';
 const mockPrisma = {
   invoice: {
     create: jest.fn(),
+    findFirst: jest.fn(),
     findMany: jest.fn(),
     findUnique: jest.fn(),
     update: jest.fn(),
@@ -60,7 +62,7 @@ describe('InvoicesService', () => {
   describe('create', () => {
     it('should create an invoice with an auto-generated invoice number', async () => {
       mockPrisma.contract.findUnique.mockResolvedValue(sampleContract);
-      mockPrisma.invoice.count.mockResolvedValue(0);
+      mockPrisma.invoice.findFirst.mockResolvedValue(null);
       mockPrisma.invoice.create.mockResolvedValue({ ...sampleInvoice, invoiceNumber: 'INV-2026-0001' });
 
       const result = await service.create({
@@ -83,7 +85,7 @@ describe('InvoicesService', () => {
 
     it('should increment invoice number when invoices already exist for the year', async () => {
       mockPrisma.contract.findUnique.mockResolvedValue(sampleContract);
-      mockPrisma.invoice.count.mockResolvedValue(5);
+      mockPrisma.invoice.findFirst.mockResolvedValue({ invoiceNumber: 'INV-2026-0005' });
       mockPrisma.invoice.create.mockResolvedValue({ ...sampleInvoice, invoiceNumber: 'INV-2026-0006' });
 
       const result = await service.create({
@@ -93,6 +95,30 @@ describe('InvoicesService', () => {
       });
 
       expect(result.invoiceNumber).toBe('INV-2026-0006');
+    });
+
+    it('should retry on unique constraint violation and succeed', async () => {
+      mockPrisma.contract.findUnique.mockResolvedValue(sampleContract);
+      mockPrisma.invoice.findFirst
+        .mockResolvedValueOnce({ invoiceNumber: 'INV-2026-0005' })
+        .mockResolvedValueOnce({ invoiceNumber: 'INV-2026-0006' });
+
+      const uniqueError = new Prisma.PrismaClientKnownRequestError(
+        'Unique constraint failed',
+        { code: 'P2002', clientVersion: '5.0.0' },
+      );
+      mockPrisma.invoice.create
+        .mockRejectedValueOnce(uniqueError)
+        .mockResolvedValueOnce({ ...sampleInvoice, invoiceNumber: 'INV-2026-0007' });
+
+      const result = await service.create({
+        contractId: sampleContract.id,
+        amount: 50000,
+        dueDate: '2026-04-01',
+      });
+
+      expect(result.invoiceNumber).toBe('INV-2026-0007');
+      expect(mockPrisma.invoice.create).toHaveBeenCalledTimes(2);
     });
   });
 
