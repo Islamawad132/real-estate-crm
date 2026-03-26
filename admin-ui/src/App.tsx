@@ -8,7 +8,9 @@ import { ErrorBoundary } from './components/ui/ErrorBoundary'
 
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
-import PropertiesPage from './pages/PropertiesPage'
+import PropertiesListPage from './pages/properties/PropertiesListPage'
+import PropertyDetailPage from './pages/properties/PropertyDetailPage'
+import PropertyFormPage from './pages/properties/PropertyFormPage'
 import ClientsPage from './pages/ClientsPage'
 import LeadsPage from './pages/LeadsPage'
 import ContractsPage from './pages/ContractsPage'
@@ -37,7 +39,10 @@ export default function App() {
                 }
               >
                 <Route index element={<DashboardPage />} />
-                <Route path="properties" element={<PropertiesPage />} />
+                <Route path="properties" element={<PropertiesListPage />} />
+                <Route path="properties/new" element={<PropertyFormPage />} />
+                <Route path="properties/:id" element={<PropertyDetailPage />} />
+                <Route path="properties/:id/edit" element={<PropertyFormPage />} />
                 <Route path="clients" element={<ClientsPage />} />
                 <Route path="leads" element={<LeadsPage />} />
                 <Route path="contracts" element={<ContractsPage />} />
