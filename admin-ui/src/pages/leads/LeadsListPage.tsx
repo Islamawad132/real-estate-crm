@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { UserCheck, Plus, LayoutGrid, List } from 'lucide-react'
+import { UserCheck, Plus, LayoutGrid } from 'lucide-react'
 import { Button, DataTable, SearchBar, Select, StatsCard } from '../../components/ui'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { useLeadsList, useLeadStats, useDeleteLead } from '../../hooks/useLeads'
@@ -235,7 +235,7 @@ export default function LeadsListPage() {
       {/* Table */}
       <DataTable
         columns={columns}
-        data={(data?.data ?? []) as Record<string, unknown>[]}
+        data={(data?.data ?? []) as unknown as Record<string, unknown>[]}
         loading={isLoading}
         page={filter.page}
         pageSize={filter.pageSize}

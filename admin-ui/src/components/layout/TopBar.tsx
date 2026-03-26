@@ -24,9 +24,8 @@ export function TopBar() {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  function handleSearch(query: string) {
-    // Global search — extend later
-    console.log('Global search:', query)
+  function handleSearch(_query: string) {
+    // TODO: implement global search
   }
 
   return (

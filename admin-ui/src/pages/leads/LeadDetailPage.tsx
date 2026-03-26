@@ -18,11 +18,11 @@ import {
   GitBranch,
   Plus,
 } from 'lucide-react'
-import { Button, Input, Select, Textarea, LoadingSpinner } from '../../components/ui'
+import { Button, Select, Textarea, LoadingSpinner } from '../../components/ui'
 import { useLeadDetail, useLeadActivities, useAddLeadActivity, useChangeLeadStatus } from '../../hooks/useLeads'
-import { formatDate, formatCurrency, cn } from '../../utils'
+import { formatDate, formatCurrency } from '../../utils'
 import toast from 'react-hot-toast'
-import type { LeadStatus, LeadActivityType, CreateActivityPayload } from '../../types/lead'
+import type { LeadStatus, LeadActivityType } from '../../types/lead'
 
 const statusColor: Record<string, string> = {
   NEW: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',

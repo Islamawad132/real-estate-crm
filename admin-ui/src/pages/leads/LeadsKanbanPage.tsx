@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { UserCheck, Plus, List, GripVertical } from 'lucide-react'
 import { Button, LoadingSpinner } from '../../components/ui'

@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FileText, Plus, AlertTriangle, DollarSign, CheckCircle, Clock, XCircle } from 'lucide-react'
-import { Button, DataTable, SearchBar, Select, StatsCard } from '../../components/ui'
+import { FileText, Plus, AlertTriangle, DollarSign, CheckCircle, Clock } from 'lucide-react'
+import { Button, DataTable, Select, StatsCard } from '../../components/ui'
 import { useContractsList, useContractStats, useExpiringContracts } from '../../hooks/useContracts'
 import { formatDate, formatCurrency } from '../../utils'
 import type { ContractType, ContractStatus, ContractFilter, Contract } from '../../types/contract'
@@ -284,7 +284,7 @@ export default function ContractsListPage() {
       {/* Table */}
       <DataTable
         columns={columns}
-        data={(data?.data ?? []) as Record<string, unknown>[]}
+        data={(data?.data ?? []) as unknown as Record<string, unknown>[]}
         loading={isLoading}
         page={filter.page}
         pageSize={filter.pageSize}
