@@ -35,6 +35,7 @@ import { useQuery } from '@tanstack/react-query'
 import { cn } from '../utils'
 import { useAuth } from '../context/AuthContext'
 import { StatsCard } from '../components/ui'
+import { NotificationsPanel, UpcomingTasks } from '../components/dashboard'
 import {
   fetchAgentOverview,
   fetchAgentLeadsPipeline,
@@ -773,12 +774,16 @@ export default function DashboardPage() {
               change={performance.data.change}
             />
           ) : null}
+
+          {/* Upcoming Tasks */}
+          <UpcomingTasks />
         </div>
 
         {/* Right column */}
         <div className="flex flex-col gap-4">
           <QuickActionsSection />
           <RecentActivitiesSection />
+          <NotificationsPanel />
         </div>
       </div>
     </div>
