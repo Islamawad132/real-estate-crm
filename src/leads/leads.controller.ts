@@ -62,11 +62,16 @@ export class LeadsController {
 
   @Get('pipeline')
   @ApiOperation({ summary: 'Get leads grouped by status for kanban pipeline view' })
-  getPipeline(@CurrentUser() user: AuthenticatedUser) {
+  @ApiQuery({ name: 'limitPerStatus', required: false, type: Number, description: 'Max leads per status bucket (default 50)' })
+  getPipeline(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('limitPerStatus') limitPerStatus?: string,
+  ) {
     const isAdminOrManager = user.roles?.some((r) =>
       ['admin', 'manager'].includes(r),
     ) ?? false;
-    return this.leadsService.getPipeline(user.sub, isAdminOrManager);
+    const limit = limitPerStatus ? Math.min(Math.max(parseInt(limitPerStatus, 10) || 50, 1), 200) : 50;
+    return this.leadsService.getPipeline(user.sub, isAdminOrManager, limit);
   }
 
   @Get('stats')

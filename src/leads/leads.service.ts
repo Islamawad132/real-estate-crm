@@ -224,43 +224,47 @@ export class LeadsService {
     };
   }
 
-  async getPipeline(agentId?: string, isAdminOrManager = false) {
-    const where: Prisma.LeadWhereInput =
+  async getPipeline(agentId?: string, isAdminOrManager = false, limitPerStatus = 50) {
+    const baseWhere: Prisma.LeadWhereInput =
       !isAdminOrManager && agentId ? { assignedAgentId: agentId } : {};
 
-    const leads = await this.prisma.lead.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        status: true,
-        priority: true,
-        source: true,
-        budget: true,
-        nextFollowUp: true,
-        createdAt: true,
-        client: {
-          select: { id: true, firstName: true, lastName: true },
-        },
-        property: {
-          select: { id: true, title: true },
-        },
+    const statuses = Object.values(LeadStatus);
+    const selectFields = {
+      id: true,
+      status: true,
+      priority: true,
+      source: true,
+      budget: true,
+      nextFollowUp: true,
+      createdAt: true,
+      client: {
+        select: { id: true, firstName: true, lastName: true },
       },
+      property: {
+        select: { id: true, title: true },
+      },
+    } satisfies Prisma.LeadSelect;
+
+    const results = await Promise.all(
+      statuses.map((status) => {
+        const where = { ...baseWhere, status };
+        return Promise.all([
+          this.prisma.lead.findMany({
+            where,
+            orderBy: { createdAt: 'desc' },
+            take: limitPerStatus,
+            select: selectFields,
+          }),
+          this.prisma.lead.count({ where }),
+        ]);
+      }),
+    );
+
+    const pipeline: Record<string, { leads: any[]; total: number }> = {};
+    statuses.forEach((status, i) => {
+      const [leads, total] = results[i];
+      pipeline[status] = { leads, total };
     });
-
-    const pipeline: Record<LeadStatus, typeof leads> = {
-      [LeadStatus.NEW]: [],
-      [LeadStatus.CONTACTED]: [],
-      [LeadStatus.QUALIFIED]: [],
-      [LeadStatus.PROPOSAL]: [],
-      [LeadStatus.NEGOTIATION]: [],
-      [LeadStatus.WON]: [],
-      [LeadStatus.LOST]: [],
-    };
-
-    for (const lead of leads) {
-      pipeline[lead.status].push(lead);
-    }
 
     return pipeline;
   }
