@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ContractsController } from './contracts.controller';
-import { ContractsService } from './contracts.service';
-import { ContractType, ContractStatus } from '@prisma/client';
-import { AuthenticatedUser } from '../common/decorators/current-user.decorator';
+import { ContractsController } from './contracts.controller.js';
+import { ContractsService } from './contracts.service.js';
+import { ContractType, ContractStatus, UserRole } from '@prisma/client';
+import { AuthenticatedUser } from '../common/decorators/current-user.decorator.js';
 
 const mockService = {
   create: jest.fn(),
@@ -17,9 +17,15 @@ const mockService = {
 };
 
 const adminUser: AuthenticatedUser = {
+  id: 'user-001',
+  authmeId: 'admin-001',
   sub: 'admin-001',
   email: 'admin@test.com',
+  firstName: 'Admin',
+  lastName: 'User',
+  role: UserRole.ADMIN,
   roles: ['admin'],
+  isActive: true,
 };
 
 describe('ContractsController', () => {

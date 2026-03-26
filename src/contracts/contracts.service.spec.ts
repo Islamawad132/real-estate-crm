@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
-import { ContractsService } from './contracts.service';
-import { PrismaService } from '../prisma/prisma.service';
-import { ContractType, ContractStatus, PropertyStatus, InvoiceStatus } from '@prisma/client';
-import { AuthenticatedUser } from '../common/decorators/current-user.decorator';
+import { ContractsService } from './contracts.service.js';
+import { PrismaService } from '../prisma/prisma.service.js';
+import { ContractType, ContractStatus, PropertyStatus, InvoiceStatus, UserRole } from '@prisma/client';
+import { AuthenticatedUser } from '../common/decorators/current-user.decorator.js';
 
 const mockPrisma: Record<string, any> = {
   contract: {
@@ -30,15 +30,27 @@ const mockPrisma: Record<string, any> = {
 };
 
 const adminUser: AuthenticatedUser = {
+  id: 'user-001',
+  authmeId: 'admin-001',
   sub: 'admin-001',
   email: 'admin@test.com',
+  firstName: 'Admin',
+  lastName: 'User',
+  role: UserRole.ADMIN,
   roles: ['admin'],
+  isActive: true,
 };
 
 const agentUser: AuthenticatedUser = {
+  id: 'user-002',
+  authmeId: 'agent-001',
   sub: 'agent-001',
   email: 'agent@test.com',
+  firstName: 'Agent',
+  lastName: 'User',
+  role: UserRole.AGENT,
   roles: ['agent'],
+  isActive: true,
 };
 
 const mockProperty = {
