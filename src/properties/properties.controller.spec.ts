@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PropertiesController } from './properties.controller.js';
 import { PropertiesService } from './properties.service.js';
-import { PropertyType, PropertyStatus } from '@prisma/client';
+import { PropertyType, PropertyStatus, UserRole } from '@prisma/client';
 import type { AuthenticatedUser } from '../common/decorators/current-user.decorator.js';
 
 const mockService = {
@@ -17,21 +17,39 @@ const mockService = {
 };
 
 const adminUser: AuthenticatedUser = {
+  id: 'user-001',
+  authmeId: 'admin-001',
   sub: 'admin-001',
   email: 'admin@test.com',
+  firstName: 'Admin',
+  lastName: 'User',
+  role: UserRole.ADMIN,
   roles: ['admin'],
+  isActive: true,
 };
 
 const managerUser: AuthenticatedUser = {
+  id: 'user-003',
+  authmeId: 'manager-001',
   sub: 'manager-001',
   email: 'manager@test.com',
+  firstName: 'Manager',
+  lastName: 'User',
+  role: UserRole.MANAGER,
   roles: ['manager'],
+  isActive: true,
 };
 
 const agentUser: AuthenticatedUser = {
+  id: 'user-002',
+  authmeId: 'agent-001',
   sub: 'agent-001',
   email: 'agent@test.com',
+  firstName: 'Agent',
+  lastName: 'User',
+  role: UserRole.AGENT,
   roles: ['agent'],
+  isActive: true,
 };
 
 const sampleProperty = {

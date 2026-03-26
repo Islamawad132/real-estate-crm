@@ -3,6 +3,7 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { DashboardController } from './dashboard.controller.js';
 import { DashboardService } from './dashboard.service.js';
 import { DateRangePreset } from './dto/date-range.dto.js';
+import { UserRole } from '@prisma/client';
 import type { AuthenticatedUser } from '../common/decorators/current-user.decorator.js';
 
 const mockService = {
@@ -19,15 +20,27 @@ const mockService = {
 };
 
 const adminUser: AuthenticatedUser = {
+  id: 'user-001',
+  authmeId: 'admin-001',
   sub: 'admin-001',
   email: 'admin@test.com',
+  firstName: 'Admin',
+  lastName: 'User',
+  role: UserRole.ADMIN,
   roles: ['admin'],
+  isActive: true,
 };
 
 const agentUser: AuthenticatedUser = {
+  id: 'user-002',
+  authmeId: 'agent-001',
   sub: 'agent-001',
   email: 'agent@test.com',
+  firstName: 'Agent',
+  lastName: 'User',
+  role: UserRole.AGENT,
   roles: ['agent'],
+  isActive: true,
 };
 
 describe('DashboardController', () => {
