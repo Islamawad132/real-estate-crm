@@ -57,10 +57,16 @@ export class EmailScheduler {
 
     for (const [agentId, agentLeads] of byAgent) {
       try {
-        // In a real system you'd look up the agent's email & name.
-        // For now we use the agentId as a placeholder.
-        const agentEmail = `${agentId}@agents.realestate-crm.com`;
-        const agentName = agentId;
+        const agent = await this.prisma.user.findUnique({
+          where: { id: agentId },
+          select: { email: true, firstName: true, lastName: true },
+        });
+        if (!agent?.email) {
+          this.logger.warn(`Agent ${agentId} has no email — skipping follow-up reminder`);
+          continue;
+        }
+        const agentEmail = agent.email;
+        const agentName = [agent.firstName, agent.lastName].filter(Boolean).join(' ') || agentId;
 
         const leadData = agentLeads.map((l) => ({
           clientName: `${l.client.firstName} ${l.client.lastName}`,
@@ -210,9 +216,18 @@ export class EmailScheduler {
             }),
           ]);
 
-        const agentEmail = `${agentId}@agents.realestate-crm.com`;
+        const agentUser = await this.prisma.user.findUnique({
+          where: { id: agentId },
+          select: { email: true, firstName: true, lastName: true },
+        });
+        if (!agentUser?.email) {
+          this.logger.warn(`Agent ${agentId} has no email — skipping weekly summary`);
+          continue;
+        }
+        const agentEmail = agentUser.email;
+        const agentName = [agentUser.firstName, agentUser.lastName].filter(Boolean).join(' ') || agentId;
 
-        await this.emailService.sendWeeklySummaryEmail(agentEmail, agentId, {
+        await this.emailService.sendWeeklySummaryEmail(agentEmail, agentName, {
           newLeads,
           leadsWon,
           leadsLost,
