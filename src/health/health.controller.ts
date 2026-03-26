@@ -26,7 +26,7 @@ export class HealthController {
     let dbStatus: 'connected' | 'disconnected' = 'disconnected';
 
     try {
-      await this.prisma.$queryRawUnsafe('SELECT 1');
+      await this.prisma.$queryRaw`SELECT 1`;
       dbStatus = 'connected';
     } catch {
       dbStatus = 'disconnected';
@@ -54,7 +54,7 @@ export class HealthController {
   @ApiOperation({ summary: 'Readiness probe — is the service ready to accept traffic?' })
   @ApiOkResponse({ description: 'Service readiness status' })
   async ready(): Promise<{ status: string }> {
-    await this.prisma.$queryRawUnsafe('SELECT 1');
+    await this.prisma.$queryRaw`SELECT 1`;
     return { status: 'ok' };
   }
 }
