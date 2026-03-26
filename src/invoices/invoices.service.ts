@@ -27,21 +27,25 @@ export class InvoicesService {
 
   /**
    * Generate a sequential invoice number in the format INV-YYYY-NNNN.
-   * Counts existing invoices for the current year and increments.
+   * Finds the highest existing invoice number for the current year and increments.
    */
   private async generateInvoiceNumber(): Promise<string> {
     const year = new Date().getFullYear();
-    const yearStart = new Date(`${year}-01-01T00:00:00.000Z`);
-    const yearEnd = new Date(`${year + 1}-01-01T00:00:00.000Z`);
+    const prefix = `INV-${year}-`;
 
-    const count = await this.prisma.invoice.count({
-      where: {
-        createdAt: { gte: yearStart, lt: yearEnd },
-      },
+    const latest = await this.prisma.invoice.findFirst({
+      where: { invoiceNumber: { startsWith: prefix } },
+      orderBy: { invoiceNumber: 'desc' },
+      select: { invoiceNumber: true },
     });
 
-    const sequence = String(count + 1).padStart(4, '0');
-    return `INV-${year}-${sequence}`;
+    let next = 1;
+    if (latest) {
+      const seq = parseInt(latest.invoiceNumber.slice(prefix.length), 10);
+      if (!isNaN(seq)) next = seq + 1;
+    }
+
+    return `${prefix}${String(next).padStart(4, '0')}`;
   }
 
   // ─── CRUD ────────────────────────────────────────────────────────────────
@@ -55,30 +59,49 @@ export class InvoicesService {
       throw new NotFoundException(`Contract with ID "${dto.contractId}" not found`);
     }
 
-    const invoiceNumber = await this.generateInvoiceNumber();
+    // Retry loop to handle race conditions on invoice number uniqueness
+    const maxRetries = 3;
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      const invoiceNumber = await this.generateInvoiceNumber();
 
-    return this.prisma.invoice.create({
-      data: {
-        contractId: dto.contractId,
-        invoiceNumber,
-        amount: dto.amount,
-        dueDate: new Date(dto.dueDate),
-        notes: dto.notes,
-        status: InvoiceStatus.PENDING,
-      },
-      include: {
-        contract: {
-          select: {
-            id: true,
-            type: true,
-            status: true,
-            totalAmount: true,
-            property: { select: { id: true, title: true, city: true } },
-            client: { select: { id: true, firstName: true, lastName: true } },
+      try {
+        return await this.prisma.invoice.create({
+          data: {
+            contractId: dto.contractId,
+            invoiceNumber,
+            amount: dto.amount,
+            dueDate: new Date(dto.dueDate),
+            notes: dto.notes,
+            status: InvoiceStatus.PENDING,
           },
-        },
-      },
-    });
+          include: {
+            contract: {
+              select: {
+                id: true,
+                type: true,
+                status: true,
+                totalAmount: true,
+                property: { select: { id: true, title: true, city: true } },
+                client: { select: { id: true, firstName: true, lastName: true } },
+              },
+            },
+          },
+        });
+      } catch (error) {
+        // P2002 = Prisma unique constraint violation
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2002' &&
+          attempt < maxRetries - 1
+        ) {
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    // Unreachable, but satisfies TypeScript
+    throw new BadRequestException('Failed to generate unique invoice number');
   }
 
   async findAll(filter: InvoiceFilterDto): Promise<PaginatedResult<unknown>> {
