@@ -136,6 +136,7 @@ model User {
   assignedProperties Property[] @relation("PropertyAgent")
   assignedClients    Client[]   @relation("ClientAgent")
   assignedLeads      Lead[]     @relation("LeadAgent")
+  assignedContracts  Contract[] @relation("ContractAgent")
   emailPreference    EmailPreference?
 
   @@index([authmeId])
@@ -283,11 +284,13 @@ model Contract {
 
   property     Property       @relation(fields: [propertyId], references: [id], onDelete: Restrict)
   client       Client         @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  agent        User?          @relation("ContractAgent", fields: [agentId], references: [id], onDelete: SetNull)
   invoices     Invoice[]
 
   @@index([status])
   @@index([propertyId])
   @@index([clientId])
+  @@index([agentId])
   @@index([createdAt])
   @@map("contracts")
 }
