@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, NotFoundException, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectQueue, Process, Processor } from '@nestjs/bull';
 import type { Job, Queue } from 'bull';
@@ -87,7 +87,7 @@ export class EmailService implements OnModuleInit {
   private renderTemplate(templateName: string, context: Record<string, any>): string {
     const template = this.templates.get(templateName);
     if (!template) {
-      throw new Error(`Email template "${templateName}" not found`);
+      throw new NotFoundException(`Email template "${templateName}" not found`);
     }
 
     const body = template(context);
@@ -188,11 +188,11 @@ export class EmailService implements OnModuleInit {
     });
 
     if (!emailLog) {
-      throw new Error(`Email log "${emailLogId}" not found`);
+      throw new NotFoundException(`Email log "${emailLogId}" not found`);
     }
 
     if (emailLog.status !== EmailStatus.FAILED) {
-      throw new Error('Only failed emails can be retried');
+      throw new BadRequestException('Only failed emails can be retried');
     }
 
     const html = this.renderTemplate(emailLog.template, (emailLog.context as Record<string, any>) ?? {});
