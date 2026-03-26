@@ -129,14 +129,13 @@ export class ActivitiesService {
   }
 
   private buildDateFilter(filter: ActivityFilterDto): Prisma.ActivityWhereInput {
-    const dateFilter: Prisma.ActivityWhereInput = {};
+    if (!filter.from && !filter.to) return {};
 
-    if (filter.from || filter.to) {
-      dateFilter.createdAt = {};
-      if (filter.from) (dateFilter.createdAt as any).gte = new Date(filter.from);
-      if (filter.to) (dateFilter.createdAt as any).lte = new Date(filter.to);
-    }
-
-    return dateFilter;
+    return {
+      createdAt: {
+        ...(filter.from ? { gte: new Date(filter.from) } : {}),
+        ...(filter.to ? { lte: new Date(filter.to) } : {}),
+      },
+    };
   }
 }
