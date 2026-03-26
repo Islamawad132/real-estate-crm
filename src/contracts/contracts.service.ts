@@ -231,8 +231,12 @@ export class ContractsService {
       );
     }
 
-    // If cancelling/completing, restore property to AVAILABLE
-    const restoreStatuses: ContractStatus[] = [ContractStatus.CANCELLED, ContractStatus.EXPIRED];
+    // Determine whether to restore property to AVAILABLE
+    const shouldRestoreProperty =
+      dto.status === ContractStatus.CANCELLED ||
+      dto.status === ContractStatus.EXPIRED ||
+      (dto.status === ContractStatus.COMPLETED &&
+        (contract.type === 'RENT' || contract.type === 'LEASE'));
 
     const updated = await this.prisma.$transaction(async (tx) => {
       const result = await tx.contract.update({
@@ -241,7 +245,7 @@ export class ContractsService {
         include: { property: true, client: true },
       });
 
-      if (restoreStatuses.includes(dto.status)) {
+      if (shouldRestoreProperty) {
         await tx.property.update({
           where: { id: contract.propertyId },
           data: { status: PropertyStatus.AVAILABLE },
