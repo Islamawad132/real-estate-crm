@@ -154,17 +154,18 @@ export class UploadsService {
       throw new NotFoundException('Image not found');
     }
 
-    // Unset current primary
-    await this.prisma.propertyImage.updateMany({
-      where: { propertyId, isPrimary: true },
-      data: { isPrimary: false },
-    });
-
-    // Set new primary
-    await this.prisma.propertyImage.update({
-      where: { id: imageId },
-      data: { isPrimary: true },
-    });
+    // Use transaction to ensure atomicity - prevents race conditions
+    // where concurrent calls could leave zero or multiple primaries
+    await this.prisma.$transaction([
+      this.prisma.propertyImage.updateMany({
+        where: { propertyId, isPrimary: true },
+        data: { isPrimary: false },
+      }),
+      this.prisma.propertyImage.update({
+        where: { id: imageId },
+        data: { isPrimary: true },
+      }),
+    ]);
 
     return { message: 'Primary image updated' };
   }
