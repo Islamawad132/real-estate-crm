@@ -11,6 +11,8 @@ import {
   Receipt,
   Zap,
   AlertCircle,
+  Upload,
+  ExternalLink,
 } from 'lucide-react'
 import { Button, LoadingSpinner, Select } from '../../components/ui'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
@@ -289,22 +291,46 @@ export default function ContractDetailPage() {
             </div>
           )}
 
-          {/* Document */}
-          {contract.documentUrl && (
-            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
-                <FileText size={18} className="text-indigo-500" /> Document
-              </h2>
-              <a
-                href={contract.documentUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline break-all"
-              >
-                {contract.documentUrl}
-              </a>
-            </div>
-          )}
+          {/* Documents */}
+          <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
+              <FileText size={18} className="text-indigo-500" /> Documents
+            </h2>
+            {contract.documentUrl ? (
+              <div className="space-y-3">
+                <a
+                  href={contract.documentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 rounded-lg border border-gray-100 dark:border-gray-700 p-3 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors group"
+                >
+                  <FileText size={16} className="text-indigo-500 shrink-0" />
+                  <span className="text-sm text-indigo-600 dark:text-indigo-400 group-hover:underline break-all flex-1">
+                    {contract.documentUrl.split('/').pop() || 'Contract Document'}
+                  </span>
+                  <ExternalLink size={14} className="text-gray-400 shrink-0" />
+                </a>
+                <button
+                  onClick={() => navigate(`/contracts/${id}/edit`)}
+                  className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                >
+                  <Upload size={12} />
+                  Update document URL
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-2 py-4 text-center">
+                <Upload size={24} className="text-gray-300 dark:text-gray-600" />
+                <p className="text-xs text-gray-400">No document attached</p>
+                <button
+                  onClick={() => navigate(`/contracts/${id}/edit`)}
+                  className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
+                >
+                  Add document URL
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Invoices */}

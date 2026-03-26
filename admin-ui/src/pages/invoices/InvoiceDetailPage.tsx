@@ -10,6 +10,8 @@ import {
   Home,
   CreditCard,
   XCircle,
+  Printer,
+  Download,
 } from 'lucide-react'
 import { Button, LoadingSpinner } from '../../components/ui'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
@@ -49,6 +51,40 @@ export default function InvoiceDetailPage() {
 
   const canPay = invoice.status === 'PENDING' || invoice.status === 'OVERDUE'
   const canCancel = invoice.status === 'PENDING' || invoice.status === 'OVERDUE'
+  const isOverdue = invoice.status === 'OVERDUE' || (invoice.status === 'PENDING' && new Date(invoice.dueDate) < new Date())
+
+  function handlePrint() {
+    window.print()
+  }
+
+  function handleExport() {
+    const invoiceData = {
+      id: invoice.id,
+      amount: invoice.amount,
+      status: invoice.status,
+      dueDate: invoice.dueDate,
+      paidDate: invoice.paidDate,
+      paymentMethod: invoice.paymentMethod,
+      notes: invoice.notes,
+      contract: invoice.contract ? {
+        id: invoice.contract.id,
+        type: invoice.contract.type,
+        status: invoice.contract.status,
+        totalAmount: invoice.contract.totalAmount,
+        property: invoice.contract.property?.title,
+        client: invoice.contract.client
+          ? `${invoice.contract.client.firstName} ${invoice.contract.client.lastName}`
+          : null,
+      } : null,
+    }
+    const blob = new Blob([JSON.stringify(invoiceData, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `invoice-${invoice.id.slice(0, 8)}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
 
   async function handleCancel() {
     try {
@@ -86,6 +122,22 @@ export default function InvoiceDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            leftIcon={<Printer size={14} />}
+            onClick={handlePrint}
+          >
+            Print
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            leftIcon={<Download size={14} />}
+            onClick={handleExport}
+          >
+            Export
+          </Button>
           {canPay && (
             <Button
               leftIcon={<CreditCard size={16} />}
@@ -105,6 +157,33 @@ export default function InvoiceDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Overdue Alert */}
+      {isOverdue && (
+        <div className="rounded-xl border border-red-200 dark:border-red-800/50 bg-red-50 dark:bg-red-900/20 px-4 py-3 flex items-center gap-3">
+          <div className="shrink-0 rounded-full bg-red-100 dark:bg-red-900/40 p-2">
+            <Calendar size={16} className="text-red-600 dark:text-red-400" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-red-800 dark:text-red-300">
+              This invoice is overdue
+            </p>
+            <p className="text-xs text-red-600 dark:text-red-400">
+              Due date was {formatDate(invoice.dueDate)}. Please record payment or follow up with the client.
+            </p>
+          </div>
+          {canPay && (
+            <Button
+              size="sm"
+              className="ml-auto"
+              leftIcon={<CreditCard size={14} />}
+              onClick={() => setPaymentOpen(true)}
+            >
+              Record Payment
+            </Button>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Invoice Info */}

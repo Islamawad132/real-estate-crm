@@ -6,11 +6,12 @@ import {
   AlertTriangle,
   CheckCircle,
   Clock,
+  TrendingUp,
 } from 'lucide-react'
 import { Button, DataTable, Select, StatsCard } from '../../components/ui'
-import { useInvoicesList, useInvoiceStats } from '../../hooks/useInvoices'
+import { useInvoicesList, useInvoiceStats, useOverdueInvoices, useUpcomingInvoices } from '../../hooks/useInvoices'
 import { formatDate, formatCurrency } from '../../utils'
-import type { InvoiceStatus, InvoiceFilter } from '../../types/invoice'
+import type { InvoiceStatus, InvoiceFilter, Invoice } from '../../types/invoice'
 import type { Column } from '../../types'
 
 const INVOICE_STATUSES: { value: InvoiceStatus; label: string }[] = [
@@ -46,8 +47,13 @@ export default function InvoicesListPage() {
     ...(dateTo ? { dateTo } : {}),
   }
 
+  const [showOverdue, setShowOverdue] = useState(false)
+  const [showUpcoming, setShowUpcoming] = useState(false)
+
   const { data, isLoading } = useInvoicesList(effectiveFilter)
   const { data: stats } = useInvoiceStats()
+  const { data: overdueInvoices } = useOverdueInvoices()
+  const { data: upcomingInvoices } = useUpcomingInvoices(14)
 
   const handleDateFilter = useCallback(() => {
     setFilter((f) => ({ ...f, page: 1 }))
@@ -171,6 +177,112 @@ export default function InvoicesListPage() {
             icon={CheckCircle}
             color="green"
           />
+        </div>
+      )}
+
+      {/* Overdue Invoices Alert */}
+      {overdueInvoices && overdueInvoices.length > 0 && (
+        <div className="rounded-xl border border-red-200 dark:border-red-800/50 bg-red-50 dark:bg-red-900/20 p-4">
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <AlertTriangle size={18} className="text-red-600 dark:text-red-400" />
+              <h3 className="font-semibold text-red-800 dark:text-red-300 text-sm">
+                Overdue Invoices ({overdueInvoices.length})
+              </h3>
+              <span className="text-xs text-red-600 dark:text-red-400">
+                {formatCurrency(overdueInvoices.reduce((s: number, i: Invoice) => s + i.amount, 0))} total overdue
+              </span>
+            </div>
+            <button
+              onClick={() => setShowOverdue(!showOverdue)}
+              className="text-xs text-red-700 dark:text-red-400 hover:underline font-medium"
+            >
+              {showOverdue ? 'Hide' : 'Show All'}
+            </button>
+          </div>
+          {showOverdue && (
+            <div className="mt-3 space-y-2">
+              {overdueInvoices.map((invoice: Invoice) => (
+                <div
+                  key={invoice.id}
+                  onClick={() => navigate(`/invoices/${invoice.id}`)}
+                  className="flex items-center justify-between rounded-lg border border-red-200 dark:border-red-800/30 bg-white dark:bg-gray-800 p-3 cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      {invoice.contract?.property?.title ?? 'N/A'}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      {invoice.contract?.client
+                        ? `${invoice.contract.client.firstName} ${invoice.contract.client.lastName}`
+                        : ''}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                      {formatCurrency(invoice.amount)}
+                    </span>
+                    <span className="text-xs text-red-600 dark:text-red-400 font-medium">
+                      Due {formatDate(invoice.dueDate)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Upcoming Invoices */}
+      {upcomingInvoices && upcomingInvoices.length > 0 && (
+        <div className="rounded-xl border border-blue-200 dark:border-blue-800/50 bg-blue-50 dark:bg-blue-900/20 p-4">
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <TrendingUp size={18} className="text-blue-600 dark:text-blue-400" />
+              <h3 className="font-semibold text-blue-800 dark:text-blue-300 text-sm">
+                Upcoming ({upcomingInvoices.length})
+              </h3>
+              <span className="text-xs text-blue-600 dark:text-blue-400">
+                Due within 14 days
+              </span>
+            </div>
+            <button
+              onClick={() => setShowUpcoming(!showUpcoming)}
+              className="text-xs text-blue-700 dark:text-blue-400 hover:underline font-medium"
+            >
+              {showUpcoming ? 'Hide' : 'Show'}
+            </button>
+          </div>
+          {showUpcoming && (
+            <div className="mt-3 space-y-2">
+              {upcomingInvoices.map((invoice: Invoice) => (
+                <div
+                  key={invoice.id}
+                  onClick={() => navigate(`/invoices/${invoice.id}`)}
+                  className="flex items-center justify-between rounded-lg border border-blue-200 dark:border-blue-800/30 bg-white dark:bg-gray-800 p-3 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      {invoice.contract?.property?.title ?? 'N/A'}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      {invoice.contract?.client
+                        ? `${invoice.contract.client.firstName} ${invoice.contract.client.lastName}`
+                        : ''}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                      {formatCurrency(invoice.amount)}
+                    </span>
+                    <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                      Due {formatDate(invoice.dueDate)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

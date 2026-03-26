@@ -1,10 +1,10 @@
 import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FileText, Plus, AlertTriangle, DollarSign, CheckCircle } from 'lucide-react'
+import { FileText, Plus, AlertTriangle, DollarSign, CheckCircle, Clock, XCircle } from 'lucide-react'
 import { Button, DataTable, SearchBar, Select, StatsCard } from '../../components/ui'
-import { useContractsList, useContractStats } from '../../hooks/useContracts'
+import { useContractsList, useContractStats, useExpiringContracts } from '../../hooks/useContracts'
 import { formatDate, formatCurrency } from '../../utils'
-import type { ContractType, ContractStatus, ContractFilter } from '../../types/contract'
+import type { ContractType, ContractStatus, ContractFilter, Contract } from '../../types/contract'
 import type { Column } from '../../types'
 
 const CONTRACT_TYPES: { value: ContractType; label: string }[] = [
@@ -45,6 +45,7 @@ export default function ContractsListPage() {
   })
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
+  const [showExpiring, setShowExpiring] = useState(false)
 
   const effectiveFilter: ContractFilter = {
     ...filter,
@@ -54,6 +55,7 @@ export default function ContractsListPage() {
 
   const { data, isLoading } = useContractsList(effectiveFilter)
   const { data: stats } = useContractStats()
+  const { data: expiringContracts } = useExpiringContracts(30)
 
   const handleDateFilter = useCallback(() => {
     setFilter((f) => ({ ...f, page: 1 }))
@@ -152,6 +154,64 @@ export default function ContractsListPage() {
             icon={DollarSign}
             color="sky"
           />
+        </div>
+      )}
+
+      {/* Expiring Contracts Alert */}
+      {expiringContracts && expiringContracts.length > 0 && (
+        <div className="rounded-xl border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-900/20 p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Clock size={18} className="text-amber-600 dark:text-amber-400" />
+              <h3 className="font-semibold text-amber-800 dark:text-amber-300 text-sm">
+                Expiring Soon ({expiringContracts.length})
+              </h3>
+              <span className="text-xs text-amber-600 dark:text-amber-400">
+                Contracts expiring within 30 days
+              </span>
+            </div>
+            <button
+              onClick={() => setShowExpiring(!showExpiring)}
+              className="text-xs text-amber-700 dark:text-amber-400 hover:underline font-medium"
+            >
+              {showExpiring ? 'Hide' : 'Show All'}
+            </button>
+          </div>
+          {showExpiring && (
+            <div className="mt-3 space-y-2">
+              {expiringContracts.map((contract: Contract) => (
+                <div
+                  key={contract.id}
+                  onClick={() => navigate(`/contracts/${contract.id}`)}
+                  className="flex items-center justify-between rounded-lg border border-amber-200 dark:border-amber-800/30 bg-white dark:bg-gray-800 p-3 cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-900/10 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${typeBadge[contract.type] ?? ''}`}>
+                      {contract.type}
+                    </span>
+                    <div>
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {contract.property?.title ?? 'N/A'}
+                      </span>
+                      <span className="text-xs text-gray-500 ml-2">
+                        {contract.client
+                          ? `${contract.client.firstName} ${contract.client.lastName}`
+                          : ''}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      {formatCurrency(contract.totalAmount)}
+                    </span>
+                    <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                      Ends {contract.endDate ? formatDate(contract.endDate) : 'N/A'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
