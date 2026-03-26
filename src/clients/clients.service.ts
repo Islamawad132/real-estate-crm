@@ -83,6 +83,16 @@ export class ClientsService {
   async remove(id: string) {
     await this.ensureExists(id);
 
+    const contractCount = await this.prisma.contract.count({
+      where: { clientId: id },
+    });
+
+    if (contractCount > 0) {
+      throw new BadRequestException(
+        `Cannot delete client: ${contractCount} contract(s) are linked to this client. Remove or reassign contracts first.`,
+      );
+    }
+
     return this.prisma.client.delete({ where: { id } });
   }
 
