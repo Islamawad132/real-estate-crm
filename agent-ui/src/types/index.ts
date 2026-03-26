@@ -197,6 +197,105 @@ export interface CreateClientPayload {
 
 export type UpdateClientPayload = Partial<CreateClientPayload>
 
+// ─── Contract ────────────────────────────────────────────────────
+
+export type ContractType = 'SALE' | 'RENT' | 'LEASE'
+export type ContractStatus = 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED' | 'EXPIRED'
+export type InvoiceStatus = 'PENDING' | 'PAID' | 'OVERDUE' | 'CANCELLED'
+export type PaymentMethod = 'CASH' | 'BANK_TRANSFER' | 'CHECK' | 'CREDIT_CARD' | 'INSTALLMENT'
+
+export interface Contract {
+  id: string
+  type: ContractType
+  status: ContractStatus
+  propertyId: string
+  property?: { id: string; title: string; address?: string } | null
+  clientId: string
+  client?: { id: string; firstName: string; lastName: string; phone: string; email?: string | null } | null
+  agentId?: string | null
+  agent?: { id: string; name: string } | null
+  startDate: string
+  endDate?: string | null
+  totalAmount: number
+  paymentTerms?: Record<string, unknown> | null
+  documentUrl?: string | null
+  notes?: string | null
+  createdAt: string
+  updatedAt: string
+  _count?: { invoices?: number }
+}
+
+export interface Invoice {
+  id: string
+  contractId: string
+  amount: number
+  dueDate: string
+  status: InvoiceStatus
+  paidDate?: string | null
+  paymentMethod?: PaymentMethod | null
+}
+
+export interface ContractDetail extends Contract {
+  invoices: Invoice[]
+}
+
+export interface ContractFilter {
+  page?: number
+  pageSize?: number
+  type?: ContractType
+  status?: ContractStatus
+  clientId?: string
+  propertyId?: string
+  agentId?: string
+  dateFrom?: string
+  dateTo?: string
+  sortBy?: 'createdAt' | 'startDate' | 'endDate' | 'totalAmount'
+  sortOrder?: 'asc' | 'desc'
+}
+
+export interface ContractStats {
+  total: number
+  byStatus: Record<ContractStatus, number>
+  byType: Record<ContractType, number>
+  totalValue: number
+}
+
+// ─── Activity ────────────────────────────────────────────────────
+
+export type ActivityEntityType = 'PROPERTY' | 'CLIENT' | 'LEAD' | 'CONTRACT' | 'INVOICE'
+
+export interface Activity {
+  id: string
+  type: string
+  description: string
+  entityType: ActivityEntityType
+  entityId: string
+  performedBy: string
+  metadata?: Record<string, unknown> | null
+  createdAt: string
+  user?: { id: string; name: string } | null
+}
+
+export interface ActivityFilter {
+  page?: number
+  pageSize?: number
+  type?: string
+  entityType?: ActivityEntityType
+  entityId?: string
+  performedBy?: string
+  from?: string
+  to?: string
+}
+
+export interface CreateActivityPayload {
+  type: string
+  description: string
+  entityType: ActivityEntityType
+  entityId: string
+  performedBy: string
+  metadata?: Record<string, unknown>
+}
+
 // Theme
 export type Theme = 'light' | 'dark'
 
