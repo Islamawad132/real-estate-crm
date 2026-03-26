@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
+import * as fsPromises from 'fs/promises';
 import * as path from 'path';
 import sharp from 'sharp';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -121,8 +122,8 @@ export class UploadsService {
     const imagePath = path.join(this.uploadDir, 'images', filename);
     const thumbPath = path.join(this.uploadDir, 'thumbnails', filename);
 
-    if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
-    if (fs.existsSync(thumbPath)) fs.unlinkSync(thumbPath);
+    await fsPromises.unlink(imagePath).catch(() => {});
+    await fsPromises.unlink(thumbPath).catch(() => {});
 
     await this.prisma.propertyImage.delete({ where: { id: imageId } });
 
@@ -195,7 +196,7 @@ export class UploadsService {
     const filename = `${contractId}-${Date.now()}${path.extname(file.originalname)}`;
     const filePath = path.join(this.uploadDir, 'documents', filename);
 
-    fs.writeFileSync(filePath, file.buffer);
+    await fsPromises.writeFile(filePath, file.buffer);
 
     // Update contract with document URL
     const updated = await this.prisma.contract.update({
@@ -206,12 +207,14 @@ export class UploadsService {
     return { documentUrl: updated.documentUrl };
   }
 
-  getFilePath(type: 'images' | 'thumbnails' | 'documents', filename: string): string {
+  async getFilePath(type: 'images' | 'thumbnails' | 'documents', filename: string): Promise<string> {
     // Prevent path traversal
     const sanitized = path.basename(filename);
     const filePath = path.join(this.uploadDir, type, sanitized);
 
-    if (!fs.existsSync(filePath)) {
+    try {
+      await fsPromises.access(filePath);
+    } catch {
       throw new NotFoundException('File not found');
     }
 
