@@ -1,8 +1,9 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreatePropertyDto } from './dto/create-property.dto.js';
 import { UpdatePropertyDto } from './dto/update-property.dto.js';
@@ -110,6 +111,14 @@ export class PropertiesService {
 
   async assignAgent(id: string, agentId: string) {
     await this.ensureExists(id);
+
+    const agent = await this.prisma.user.findUnique({ where: { id: agentId } });
+    if (!agent) {
+      throw new NotFoundException(`User with ID "${agentId}" not found`);
+    }
+    if (agent.role === UserRole.ADMIN) {
+      throw new BadRequestException('Cannot assign an ADMIN user as an agent');
+    }
 
     return this.prisma.property.update({
       where: { id },
