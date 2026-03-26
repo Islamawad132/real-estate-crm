@@ -65,6 +65,13 @@ export class PdfService {
     month?: string,
     agentId?: string,
   ): Promise<Buffer> {
+    // Validate month format if provided
+    if (month !== undefined && !/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
+      throw new BadRequestException(
+        `Invalid month format: "${month}". Expected YYYY-MM (e.g. "2026-03")`,
+      );
+    }
+
     // Default to current month
     const now = new Date();
     const periodStr = month ?? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
