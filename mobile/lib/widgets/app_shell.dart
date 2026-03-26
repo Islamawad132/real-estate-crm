@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class AppShell extends StatelessWidget {
+import '../providers/notification_provider.dart';
+import 'offline_indicator.dart';
+
+class AppShell extends ConsumerWidget {
   final Widget child;
 
   const AppShell({super.key, required this.child});
@@ -16,9 +20,35 @@ class AppShell extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final unreadCount = ref.watch(unreadNotificationCountProvider);
+
     return Scaffold(
-      body: child,
+      appBar: AppBar(
+        title: _titleForIndex(_currentIndex(context)),
+        actions: [
+          // Notification bell with unread badge
+          IconButton(
+            icon: Badge(
+              isLabelVisible: unreadCount > 0,
+              label: Text(
+                unreadCount > 99 ? '99+' : unreadCount.toString(),
+                style: const TextStyle(fontSize: 10),
+              ),
+              child: const Icon(Icons.notifications_outlined),
+            ),
+            onPressed: () => context.go('/notifications'),
+            tooltip: 'Notifications',
+          ),
+          const SizedBox(width: 4),
+        ],
+      ),
+      body: Column(
+        children: [
+          const OfflineIndicator(),
+          Expanded(child: child),
+        ],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex(context),
         onDestinationSelected: (index) {
@@ -64,5 +94,16 @@ class AppShell extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _titleForIndex(int index) {
+    const titles = [
+      'Dashboard',
+      'Properties',
+      'Leads',
+      'Clients',
+      'Profile',
+    ];
+    return Text(titles[index]);
   }
 }

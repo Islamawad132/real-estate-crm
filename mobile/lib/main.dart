@@ -1,11 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'config/router.dart';
 import 'config/theme.dart';
+import 'services/notification_service.dart';
+import 'services/offline_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase.
+  await Firebase.initializeApp();
+
+  // Initialize offline caching (Hive boxes + connectivity listener).
+  await OfflineService.instance.initialize();
+
+  // Initialize push notifications and local notification channels.
+  await NotificationService.instance.initialize();
+
   runApp(const ProviderScope(child: RealEstateCrmApp()));
 }
 
