@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -10,6 +11,7 @@ import { UpdateInvoiceDto } from './dto/update-invoice.dto.js';
 import { InvoiceFilterDto } from './dto/invoice-filter.dto.js';
 import { RecordPaymentDto } from './dto/record-payment.dto.js';
 import { paginate, PaginatedResult } from '../common/dto/pagination.dto.js';
+import type { AuthenticatedUser } from '../common/decorators/current-user.decorator.js';
 
 @Injectable()
 export class InvoicesService {
@@ -17,40 +19,49 @@ export class InvoicesService {
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
 
+  private isAgent(user: AuthenticatedUser): boolean {
+    return !!(user.roles && !user.roles.includes('admin') && !user.roles.includes('manager'));
+  }
+
   private async ensureInvoiceExists(id: string) {
-    const invoice = await this.prisma.invoice.findUnique({ where: { id } });
+    const invoice = await this.prisma.invoice.findUnique({
+      where: { id },
+      include: { contract: { select: { agentId: true } } },
+    });
     if (!invoice) {
       throw new NotFoundException(`Invoice with ID "${id}" not found`);
     }
     return invoice;
   }
 
+  private assertOwnership(invoice: { contract: { agentId: string | null } }, user: AuthenticatedUser) {
+    if (this.isAgent(user) && invoice.contract.agentId !== user.sub) {
+      throw new ForbiddenException('You can only access invoices for your own contracts');
+    }
+  }
+
   /**
    * Generate a sequential invoice number in the format INV-YYYY-NNNN.
-   * Finds the highest existing invoice number for the current year and increments.
+   * Counts existing invoices for the current year and increments.
    */
   private async generateInvoiceNumber(): Promise<string> {
     const year = new Date().getFullYear();
-    const prefix = `INV-${year}-`;
+    const yearStart = new Date(`${year}-01-01T00:00:00.000Z`);
+    const yearEnd = new Date(`${year + 1}-01-01T00:00:00.000Z`);
 
-    const latest = await this.prisma.invoice.findFirst({
-      where: { invoiceNumber: { startsWith: prefix } },
-      orderBy: { invoiceNumber: 'desc' },
-      select: { invoiceNumber: true },
+    const count = await this.prisma.invoice.count({
+      where: {
+        createdAt: { gte: yearStart, lt: yearEnd },
+      },
     });
 
-    let next = 1;
-    if (latest) {
-      const seq = parseInt(latest.invoiceNumber.slice(prefix.length), 10);
-      if (!isNaN(seq)) next = seq + 1;
-    }
-
-    return `${prefix}${String(next).padStart(4, '0')}`;
+    const sequence = String(count + 1).padStart(4, '0');
+    return `INV-${year}-${sequence}`;
   }
 
   // ─── CRUD ────────────────────────────────────────────────────────────────
 
-  async create(dto: CreateInvoiceDto) {
+  async create(dto: CreateInvoiceDto, user: AuthenticatedUser) {
     // Validate contract exists
     const contract = await this.prisma.contract.findUnique({
       where: { id: dto.contractId },
@@ -59,53 +70,44 @@ export class InvoicesService {
       throw new NotFoundException(`Contract with ID "${dto.contractId}" not found`);
     }
 
-    // Retry loop to handle race conditions on invoice number uniqueness
-    const maxRetries = 3;
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
-      const invoiceNumber = await this.generateInvoiceNumber();
-
-      try {
-        return await this.prisma.invoice.create({
-          data: {
-            contractId: dto.contractId,
-            invoiceNumber,
-            amount: dto.amount,
-            dueDate: new Date(dto.dueDate),
-            notes: dto.notes,
-            status: InvoiceStatus.PENDING,
-          },
-          include: {
-            contract: {
-              select: {
-                id: true,
-                type: true,
-                status: true,
-                totalAmount: true,
-                property: { select: { id: true, title: true, city: true } },
-                client: { select: { id: true, firstName: true, lastName: true } },
-              },
-            },
-          },
-        });
-      } catch (error) {
-        // P2002 = Prisma unique constraint violation
-        if (
-          error instanceof Prisma.PrismaClientKnownRequestError &&
-          error.code === 'P2002' &&
-          attempt < maxRetries - 1
-        ) {
-          continue;
-        }
-        throw error;
-      }
+    // Agents can only create invoices for their own contracts
+    if (this.isAgent(user) && contract.agentId !== user.sub) {
+      throw new ForbiddenException('You can only create invoices for your own contracts');
     }
 
-    // Unreachable, but satisfies TypeScript
-    throw new BadRequestException('Failed to generate unique invoice number');
+    const invoiceNumber = await this.generateInvoiceNumber();
+
+    return this.prisma.invoice.create({
+      data: {
+        contractId: dto.contractId,
+        invoiceNumber,
+        amount: dto.amount,
+        dueDate: new Date(dto.dueDate),
+        notes: dto.notes,
+        status: InvoiceStatus.PENDING,
+      },
+      include: {
+        contract: {
+          select: {
+            id: true,
+            type: true,
+            status: true,
+            totalAmount: true,
+            property: { select: { id: true, title: true, city: true } },
+            client: { select: { id: true, firstName: true, lastName: true } },
+          },
+        },
+      },
+    });
   }
 
-  async findAll(filter: InvoiceFilterDto): Promise<PaginatedResult<unknown>> {
+  async findAll(filter: InvoiceFilterDto, user: AuthenticatedUser): Promise<PaginatedResult<unknown>> {
     const where: Prisma.InvoiceWhereInput = {};
+
+    // Agents can only see invoices for their own contracts
+    if (this.isAgent(user)) {
+      where.contract = { agentId: user.sub };
+    }
 
     if (filter.status) where.status = filter.status;
     if (filter.contractId) where.contractId = filter.contractId;
@@ -164,7 +166,7 @@ export class InvoicesService {
     return paginate(data, total, filter);
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, user: AuthenticatedUser) {
     const invoice = await this.prisma.invoice.findUnique({
       where: { id },
       include: {
@@ -181,11 +183,17 @@ export class InvoicesService {
       throw new NotFoundException(`Invoice with ID "${id}" not found`);
     }
 
+    // Agents can only view invoices for their own contracts
+    if (this.isAgent(user) && invoice.contract.agentId !== user.sub) {
+      throw new ForbiddenException('You can only view invoices for your own contracts');
+    }
+
     return invoice;
   }
 
-  async update(id: string, dto: UpdateInvoiceDto) {
+  async update(id: string, dto: UpdateInvoiceDto, user: AuthenticatedUser) {
     const invoice = await this.ensureInvoiceExists(id);
+    this.assertOwnership(invoice, user);
 
     if (invoice.status === InvoiceStatus.PAID) {
       throw new BadRequestException('Cannot update a paid invoice');
@@ -207,8 +215,9 @@ export class InvoicesService {
 
   // ─── Status transitions ───────────────────────────────────────────────────
 
-  async recordPayment(id: string, dto: RecordPaymentDto) {
+  async recordPayment(id: string, dto: RecordPaymentDto, user: AuthenticatedUser) {
     const invoice = await this.ensureInvoiceExists(id);
+    this.assertOwnership(invoice, user);
 
     if (invoice.status === InvoiceStatus.PAID) {
       throw new BadRequestException('Invoice is already paid');
@@ -229,8 +238,9 @@ export class InvoicesService {
     });
   }
 
-  async cancel(id: string) {
+  async cancel(id: string, user: AuthenticatedUser) {
     const invoice = await this.ensureInvoiceExists(id);
+    this.assertOwnership(invoice, user);
 
     if (invoice.status === InvoiceStatus.PAID) {
       throw new BadRequestException('Cannot cancel a paid invoice');
@@ -248,12 +258,18 @@ export class InvoicesService {
 
   // ─── Specialised queries ──────────────────────────────────────────────────
 
-  async findOverdue(): Promise<unknown[]> {
+  async findOverdue(user: AuthenticatedUser): Promise<unknown[]> {
+    const where: Prisma.InvoiceWhereInput = {
+      status: InvoiceStatus.PENDING,
+      dueDate: { lt: new Date() },
+    };
+
+    if (this.isAgent(user)) {
+      where.contract = { agentId: user.sub };
+    }
+
     return this.prisma.invoice.findMany({
-      where: {
-        status: InvoiceStatus.PENDING,
-        dueDate: { lt: new Date() },
-      },
+      where,
       orderBy: { dueDate: 'asc' },
       include: {
         contract: {
@@ -268,16 +284,22 @@ export class InvoicesService {
     });
   }
 
-  async findUpcoming(days = 30): Promise<unknown[]> {
+  async findUpcoming(days = 30, user?: AuthenticatedUser): Promise<unknown[]> {
     const now = new Date();
     const future = new Date();
     future.setDate(future.getDate() + days);
 
+    const where: Prisma.InvoiceWhereInput = {
+      status: InvoiceStatus.PENDING,
+      dueDate: { gte: now, lte: future },
+    };
+
+    if (user && this.isAgent(user)) {
+      where.contract = { agentId: user.sub };
+    }
+
     return this.prisma.invoice.findMany({
-      where: {
-        status: InvoiceStatus.PENDING,
-        dueDate: { gte: now, lte: future },
-      },
+      where,
       orderBy: { dueDate: 'asc' },
       include: {
         contract: {
@@ -292,8 +314,13 @@ export class InvoicesService {
     });
   }
 
-  async getStats() {
+  async getStats(user: AuthenticatedUser) {
     const now = new Date();
+
+    const agentFilter: Prisma.InvoiceWhereInput = {};
+    if (this.isAgent(user)) {
+      agentFilter.contract = { agentId: user.sub };
+    }
 
     const [
       totalInvoices,
@@ -302,21 +329,22 @@ export class InvoicesService {
       totalOverdue,
       byStatus,
     ] = await Promise.all([
-      this.prisma.invoice.count(),
+      this.prisma.invoice.count({ where: agentFilter }),
       // Total pending (not yet paid, not cancelled)
       this.prisma.invoice.aggregate({
         _sum: { amount: true },
-        where: { status: InvoiceStatus.PENDING },
+        where: { ...agentFilter, status: InvoiceStatus.PENDING },
       }),
       // Total collected (paid)
       this.prisma.invoice.aggregate({
         _sum: { amount: true },
-        where: { status: InvoiceStatus.PAID },
+        where: { ...agentFilter, status: InvoiceStatus.PAID },
       }),
       // Total overdue amount
       this.prisma.invoice.aggregate({
         _sum: { amount: true },
         where: {
+          ...agentFilter,
           status: InvoiceStatus.PENDING,
           dueDate: { lt: now },
         },
@@ -325,6 +353,7 @@ export class InvoicesService {
         by: ['status'],
         _count: { id: true },
         _sum: { amount: true },
+        where: agentFilter,
       }),
     ]);
 

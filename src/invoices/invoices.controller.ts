@@ -27,6 +27,8 @@ import { InvoiceFilterDto } from './dto/invoice-filter.dto.js';
 import { RecordPaymentDto } from './dto/record-payment.dto.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
 import { AuthGuard } from '../common/guards/auth.guard.js';
+import { CurrentUser } from '../common/decorators/current-user.decorator.js';
+import type { AuthenticatedUser } from '../common/decorators/current-user.decorator.js';
 
 @ApiTags('Invoices')
 @ApiBearerAuth()
@@ -40,30 +42,30 @@ export class InvoicesController {
   @ApiOperation({ summary: 'Create a new invoice for a contract' })
   @ApiResponse({ status: 201, description: 'Invoice created' })
   @ApiResponse({ status: 404, description: 'Contract not found' })
-  create(@Body() dto: CreateInvoiceDto) {
-    return this.invoicesService.create(dto);
+  create(@Body() dto: CreateInvoiceDto, @CurrentUser() user: AuthenticatedUser) {
+    return this.invoicesService.create(dto, user);
   }
 
   @Get()
   @ApiOperation({ summary: 'List invoices with filters and pagination' })
   @ApiResponse({ status: 200, description: 'Paginated list of invoices' })
-  findAll(@Query() filter: InvoiceFilterDto) {
-    return this.invoicesService.findAll(filter);
+  findAll(@Query() filter: InvoiceFilterDto, @CurrentUser() user: AuthenticatedUser) {
+    return this.invoicesService.findAll(filter, user);
   }
 
   @Get('stats')
   @Roles('admin', 'manager')
   @ApiOperation({ summary: 'Get payment statistics (total due, collected, overdue)' })
   @ApiResponse({ status: 200, description: 'Invoice statistics' })
-  getStats() {
-    return this.invoicesService.getStats();
+  getStats(@CurrentUser() user: AuthenticatedUser) {
+    return this.invoicesService.getStats(user);
   }
 
   @Get('overdue')
   @ApiOperation({ summary: 'List all overdue invoices (pending past due date)' })
   @ApiResponse({ status: 200, description: 'Overdue invoices' })
-  findOverdue() {
-    return this.invoicesService.findOverdue();
+  findOverdue(@CurrentUser() user: AuthenticatedUser) {
+    return this.invoicesService.findOverdue(user);
   }
 
   @Get('upcoming')
@@ -75,8 +77,8 @@ export class InvoicesController {
     description: 'Days ahead to look (default: 30)',
   })
   @ApiResponse({ status: 200, description: 'Upcoming invoices' })
-  findUpcoming(@Query('days') days?: string) {
-    return this.invoicesService.findUpcoming(days ? Number(days) : 30);
+  findUpcoming(@Query('days') days?: string, @CurrentUser() user?: AuthenticatedUser) {
+    return this.invoicesService.findUpcoming(days ? Number(days) : 30, user);
   }
 
   @Get(':id')
@@ -84,8 +86,8 @@ export class InvoicesController {
   @ApiParam({ name: 'id', description: 'Invoice UUID' })
   @ApiResponse({ status: 200, description: 'Invoice details' })
   @ApiResponse({ status: 404, description: 'Invoice not found' })
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.invoicesService.findOne(id);
+  findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.invoicesService.findOne(id, user);
   }
 
   @Put(':id')
@@ -98,8 +100,9 @@ export class InvoicesController {
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateInvoiceDto,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.invoicesService.update(id, dto);
+    return this.invoicesService.update(id, dto, user);
   }
 
   @Patch(':id/pay')
@@ -113,8 +116,9 @@ export class InvoicesController {
   recordPayment(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: RecordPaymentDto,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.invoicesService.recordPayment(id, dto);
+    return this.invoicesService.recordPayment(id, dto, user);
   }
 
   @Patch(':id/cancel')
@@ -125,7 +129,7 @@ export class InvoicesController {
   @ApiResponse({ status: 200, description: 'Invoice cancelled' })
   @ApiResponse({ status: 400, description: 'Invoice already paid or cancelled' })
   @ApiResponse({ status: 404, description: 'Invoice not found' })
-  cancel(@Param('id', ParseUUIDPipe) id: string) {
-    return this.invoicesService.cancel(id);
+  cancel(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.invoicesService.cancel(id, user);
   }
 }
