@@ -15,6 +15,7 @@ import { ActivitiesModule } from './activities/activities.module.js';
 import { UploadsModule } from './uploads/uploads.module.js';
 import { DashboardModule } from './dashboard/dashboard.module.js';
 import { EmailModule } from './email/email.module.js';
+import { HealthModule } from './health/health.module.js';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { EmailModule } from './email/email.module.js';
     UploadsModule,
     DashboardModule,
     EmailModule,
+    HealthModule,
   ],
   providers: [
     // Rate limiting — applied first, before auth
