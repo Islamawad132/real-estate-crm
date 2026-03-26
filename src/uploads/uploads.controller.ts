@@ -1,11 +1,14 @@
 import {
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   Param,
+  ParseEnumPipe,
   ParseUUIDPipe,
   Patch,
   Post,
+  Req,
   Res,
   UploadedFile,
   UploadedFiles,
@@ -22,11 +25,12 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 import { UploadsService } from './uploads.service.js';
 import { AuthGuard } from '../common/guards/auth.guard.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
 import { Public } from '../common/decorators/roles.decorator.js';
+import { FileType } from './enums/file-type.enum.js';
 
 @ApiBearerAuth()
 @UseGuards(AuthGuard)
@@ -121,24 +125,24 @@ export class UploadsController {
   @Public()
   @ApiTags('File Serving')
   @ApiOperation({ summary: 'Serve an uploaded file' })
-  @ApiParam({ name: 'type', enum: ['images', 'thumbnails', 'documents'] })
+  @ApiParam({ name: 'type', enum: FileType })
   @ApiParam({ name: 'filename', description: 'Filename' })
   @ApiResponse({ status: 200, description: 'File content' })
+  @ApiResponse({ status: 400, description: 'Invalid file type' })
+  @ApiResponse({ status: 403, description: 'Documents require authentication' })
   @ApiResponse({ status: 404, description: 'File not found' })
   async serveFile(
-    @Param('type') type: string,
+    @Param('type', new ParseEnumPipe(FileType)) type: FileType,
     @Param('filename') filename: string,
+    @Req() req: Request,
     @Res() res: Response,
   ) {
-    const allowedTypes = ['images', 'thumbnails', 'documents'];
-    if (!allowedTypes.includes(type)) {
-      return res.status(400).json({ message: 'Invalid file type' });
+    // Documents require authentication - reject unauthenticated requests
+    if (type === FileType.DOCUMENTS && !(req as any).user) {
+      throw new ForbiddenException('Documents require authentication');
     }
 
-    const filePath = await this.uploadsService.getFilePath(
-      type as 'images' | 'thumbnails' | 'documents',
-      filename,
-    );
+    const filePath = await this.uploadsService.getFilePath(type, filename);
     return res.sendFile(filePath);
   }
 }

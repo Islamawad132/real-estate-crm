@@ -1,7 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { UploadsController } from './uploads.controller.js';
 import { UploadsService } from './uploads.service.js';
+import { FileType } from './enums/file-type.enum.js';
 
 const mockService = {
   uploadPropertyImages: jest.fn(),
@@ -139,43 +140,49 @@ describe('UploadsController', () => {
       return res;
     };
 
-    it('should serve an image file', () => {
+    const mockRequest = (user?: any) => ({ user } as any);
+
+    it('should serve an image file without authentication', async () => {
       const res = mockResponse();
-      mockService.getFilePath.mockReturnValue('/tmp/uploads/images/photo.jpg');
+      const req = mockRequest(); // no user
+      mockService.getFilePath.mockResolvedValue('/tmp/uploads/images/photo.jpg');
 
-      controller.serveFile('images', 'photo.jpg', res);
+      await controller.serveFile(FileType.IMAGES, 'photo.jpg', req, res);
 
-      expect(mockService.getFilePath).toHaveBeenCalledWith('images', 'photo.jpg');
+      expect(mockService.getFilePath).toHaveBeenCalledWith(FileType.IMAGES, 'photo.jpg');
       expect(res.sendFile).toHaveBeenCalledWith('/tmp/uploads/images/photo.jpg');
     });
 
-    it('should serve a thumbnail file', () => {
+    it('should serve a thumbnail file without authentication', async () => {
       const res = mockResponse();
-      mockService.getFilePath.mockReturnValue('/tmp/uploads/thumbnails/thumb.jpg');
+      const req = mockRequest(); // no user
+      mockService.getFilePath.mockResolvedValue('/tmp/uploads/thumbnails/thumb.jpg');
 
-      controller.serveFile('thumbnails', 'thumb.jpg', res);
+      await controller.serveFile(FileType.THUMBNAILS, 'thumb.jpg', req, res);
 
-      expect(mockService.getFilePath).toHaveBeenCalledWith('thumbnails', 'thumb.jpg');
+      expect(mockService.getFilePath).toHaveBeenCalledWith(FileType.THUMBNAILS, 'thumb.jpg');
       expect(res.sendFile).toHaveBeenCalledWith('/tmp/uploads/thumbnails/thumb.jpg');
     });
 
-    it('should serve a document file', () => {
+    it('should serve a document file for authenticated users', async () => {
       const res = mockResponse();
-      mockService.getFilePath.mockReturnValue('/tmp/uploads/documents/doc.pdf');
+      const req = mockRequest({ id: 'user-1', role: 'admin' });
+      mockService.getFilePath.mockResolvedValue('/tmp/uploads/documents/doc.pdf');
 
-      controller.serveFile('documents', 'doc.pdf', res);
+      await controller.serveFile(FileType.DOCUMENTS, 'doc.pdf', req, res);
 
-      expect(mockService.getFilePath).toHaveBeenCalledWith('documents', 'doc.pdf');
+      expect(mockService.getFilePath).toHaveBeenCalledWith(FileType.DOCUMENTS, 'doc.pdf');
       expect(res.sendFile).toHaveBeenCalledWith('/tmp/uploads/documents/doc.pdf');
     });
 
-    it('should return 400 for invalid file type parameter', () => {
+    it('should throw ForbiddenException for unauthenticated document access', async () => {
       const res = mockResponse();
+      const req = mockRequest(); // no user
 
-      controller.serveFile('malicious', 'file.txt', res);
+      await expect(
+        controller.serveFile(FileType.DOCUMENTS, 'doc.pdf', req, res),
+      ).rejects.toThrow(ForbiddenException);
 
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ message: 'Invalid file type' });
       expect(mockService.getFilePath).not.toHaveBeenCalled();
     });
   });
