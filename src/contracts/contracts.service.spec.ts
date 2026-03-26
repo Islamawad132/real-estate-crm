@@ -258,6 +258,77 @@ describe('ContractsService', () => {
       ).rejects.toThrow(ForbiddenException);
     });
 
+    it('should restore property to AVAILABLE when RENT contract is completed', async () => {
+      mockPrisma.contract.findUnique.mockResolvedValue({
+        ...mockContract,
+        type: ContractType.RENT,
+        status: ContractStatus.ACTIVE,
+      });
+      mockPrisma.contract.update.mockResolvedValue({
+        ...mockContract,
+        type: ContractType.RENT,
+        status: ContractStatus.COMPLETED,
+      });
+      mockPrisma.property.update.mockResolvedValue({
+        ...mockProperty,
+        status: PropertyStatus.AVAILABLE,
+      });
+
+      await service.changeStatus('contract-001', {
+        status: ContractStatus.COMPLETED,
+      }, adminUser);
+
+      expect(mockPrisma.property.update).toHaveBeenCalledWith({
+        where: { id: 'prop-001' },
+        data: { status: PropertyStatus.AVAILABLE },
+      });
+    });
+
+    it('should restore property to AVAILABLE when LEASE contract is completed', async () => {
+      mockPrisma.contract.findUnique.mockResolvedValue({
+        ...mockContract,
+        type: ContractType.LEASE,
+        status: ContractStatus.ACTIVE,
+      });
+      mockPrisma.contract.update.mockResolvedValue({
+        ...mockContract,
+        type: ContractType.LEASE,
+        status: ContractStatus.COMPLETED,
+      });
+      mockPrisma.property.update.mockResolvedValue({
+        ...mockProperty,
+        status: PropertyStatus.AVAILABLE,
+      });
+
+      await service.changeStatus('contract-001', {
+        status: ContractStatus.COMPLETED,
+      }, adminUser);
+
+      expect(mockPrisma.property.update).toHaveBeenCalledWith({
+        where: { id: 'prop-001' },
+        data: { status: PropertyStatus.AVAILABLE },
+      });
+    });
+
+    it('should NOT restore property when SALE contract is completed', async () => {
+      mockPrisma.contract.findUnique.mockResolvedValue({
+        ...mockContract,
+        type: ContractType.SALE,
+        status: ContractStatus.ACTIVE,
+      });
+      mockPrisma.contract.update.mockResolvedValue({
+        ...mockContract,
+        type: ContractType.SALE,
+        status: ContractStatus.COMPLETED,
+      });
+
+      await service.changeStatus('contract-001', {
+        status: ContractStatus.COMPLETED,
+      }, adminUser);
+
+      expect(mockPrisma.property.update).not.toHaveBeenCalled();
+    });
+
     it('should allow agent to change own contract status', async () => {
       mockPrisma.contract.findUnique.mockResolvedValue({
         ...mockContract,
