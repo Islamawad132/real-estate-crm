@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { X, User, Building2, Calendar, Clock, Tag } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { cn, formatDate, formatCurrency } from '../../utils'
-import { Button, Badge, LoadingSpinner, Select } from '../ui'
+import { Badge, LoadingSpinner, Select } from '../ui'
 import { LeadStatusBadge } from './LeadStatusBadge'
 import { LeadActivityForm } from './LeadActivityForm'
 import { leadsApi } from '../../api/leads'
@@ -185,6 +185,18 @@ export function LeadDetailPanel({ leadId, onClose, onUpdated }: LeadDetailPanelP
         </div>
       </div>
     </SlideOver>
+  )
+}
+
+function InfoSection({ icon: Icon, title, children }: { icon: React.ComponentType<{ size?: number; className?: string }>; title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+        <Icon size={14} className="text-gray-400" />
+        {title}
+      </h3>
+      <div className="pl-5">{children}</div>
+    </div>
   )
 }
 

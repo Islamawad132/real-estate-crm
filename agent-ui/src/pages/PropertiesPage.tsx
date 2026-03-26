@@ -247,13 +247,13 @@ function PropertyDetailPanel({
 }) {
   const isAssigned = !!property.assignedAgentId
 
-  const statusOptions: { value: PropertyStatus; label: string }[] = [
-    { value: 'AVAILABLE', label: 'Available' },
-    { value: 'RESERVED', label: 'Reserved' },
-    { value: 'SOLD', label: 'Sold' },
-    { value: 'RENTED', label: 'Rented' },
-    { value: 'OFF_MARKET', label: 'Off Market' },
-  ].filter((opt) => opt.value !== property.status)
+  const statusOptions = ([
+    { value: 'AVAILABLE' as PropertyStatus, label: 'Available' },
+    { value: 'RESERVED' as PropertyStatus, label: 'Reserved' },
+    { value: 'SOLD' as PropertyStatus, label: 'Sold' },
+    { value: 'RENTED' as PropertyStatus, label: 'Rented' },
+    { value: 'OFF_MARKET' as PropertyStatus, label: 'Off Market' },
+  ] satisfies { value: PropertyStatus; label: string }[]).filter((opt) => opt.value !== property.status)
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">

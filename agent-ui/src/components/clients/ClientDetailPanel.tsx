@@ -145,7 +145,7 @@ export function ClientDetailPanel({ clientId, onClose }: ClientDetailPanelProps)
                           <p className="text-gray-600 dark:text-gray-400">
                             {String(entry.description ?? entry.type ?? 'Activity')}
                           </p>
-                          {entry.createdAt && (
+                          {entry.createdAt != null && (
                             <p className="text-xs text-gray-400">{formatDate(String(entry.createdAt))}</p>
                           )}
                         </div>

@@ -235,7 +235,7 @@ export default function ContractsPage() {
       {/* Table */}
       <DataTable<Contract>
         columns={columns}
-        data={(data?.data ?? []) as (Contract & Record<string, unknown>)[]}
+        data={data?.data ?? []}
         loading={isLoading}
         page={page}
         totalPages={data?.totalPages}
