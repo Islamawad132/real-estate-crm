@@ -207,7 +207,7 @@ describe('ContractsService', () => {
 
       const result = await service.changeStatus('contract-001', {
         status: ContractStatus.ACTIVE,
-      });
+      }, adminUser);
 
       expect(result.status).toBe(ContractStatus.ACTIVE);
     });
@@ -219,7 +219,7 @@ describe('ContractsService', () => {
       });
 
       await expect(
-        service.changeStatus('contract-001', { status: ContractStatus.DRAFT }),
+        service.changeStatus('contract-001', { status: ContractStatus.DRAFT }, adminUser),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -239,12 +239,62 @@ describe('ContractsService', () => {
 
       await service.changeStatus('contract-001', {
         status: ContractStatus.CANCELLED,
-      });
+      }, adminUser);
 
       expect(mockPrisma.property.update).toHaveBeenCalledWith({
         where: { id: 'prop-001' },
         data: { status: PropertyStatus.AVAILABLE },
       });
+    });
+
+    it('should throw ForbiddenException for agent changing another agent contract status', async () => {
+      mockPrisma.contract.findUnique.mockResolvedValue({
+        ...mockContract,
+        agentId: 'other-agent',
+      });
+
+      await expect(
+        service.changeStatus('contract-001', { status: ContractStatus.ACTIVE }, agentUser),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should allow agent to change own contract status', async () => {
+      mockPrisma.contract.findUnique.mockResolvedValue({
+        ...mockContract,
+        agentId: 'agent-001',
+      });
+      mockPrisma.contract.update.mockResolvedValue({
+        ...mockContract,
+        agentId: 'agent-001',
+        status: ContractStatus.ACTIVE,
+      });
+
+      const result = await service.changeStatus('contract-001', {
+        status: ContractStatus.ACTIVE,
+      }, agentUser);
+
+      expect(result.status).toBe(ContractStatus.ACTIVE);
+    });
+  });
+
+  describe('findContractInvoices', () => {
+    it('should return invoices for a contract', async () => {
+      mockPrisma.contract.findUnique.mockResolvedValue(mockContract);
+      mockPrisma.invoice.findMany.mockResolvedValue([]);
+
+      const result = await service.findContractInvoices('contract-001', adminUser);
+      expect(result).toEqual([]);
+    });
+
+    it('should throw ForbiddenException for agent viewing another agent contract invoices', async () => {
+      mockPrisma.contract.findUnique.mockResolvedValue({
+        ...mockContract,
+        agentId: 'other-agent',
+      });
+
+      await expect(
+        service.findContractInvoices('contract-001', agentUser),
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 
@@ -254,7 +304,7 @@ describe('ContractsService', () => {
       mockPrisma.invoice.createMany.mockResolvedValue({ count: 12 });
       mockPrisma.invoice.findMany.mockResolvedValue([]);
 
-      await service.generateInvoices('contract-001', {});
+      await service.generateInvoices('contract-001', {}, adminUser);
 
       expect(mockPrisma.invoice.createMany).toHaveBeenCalledWith({
         data: expect.arrayContaining([
@@ -273,8 +323,19 @@ describe('ContractsService', () => {
       });
 
       await expect(
-        service.generateInvoices('contract-001', {}),
+        service.generateInvoices('contract-001', {}, adminUser),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw ForbiddenException for agent generating invoices for another agent contract', async () => {
+      mockPrisma.contract.findUnique.mockResolvedValue({
+        ...mockContract,
+        agentId: 'other-agent',
+      });
+
+      await expect(
+        service.generateInvoices('contract-001', {}, agentUser),
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 

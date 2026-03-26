@@ -198,7 +198,7 @@ export class ContractsService {
     });
   }
 
-  async changeStatus(id: string, dto: ChangeContractStatusDto) {
+  async changeStatus(id: string, dto: ChangeContractStatusDto, user: AuthenticatedUser) {
     const contract = await this.prisma.contract.findUnique({
       where: { id },
       include: { property: true },
@@ -206,6 +206,13 @@ export class ContractsService {
 
     if (!contract) {
       throw new NotFoundException(`Contract ${id} not found`);
+    }
+
+    // Agent can only change status of own contracts
+    const isAgent =
+      user.roles && !user.roles.includes('admin') && !user.roles.includes('manager');
+    if (isAgent && contract.agentId !== user.sub) {
+      throw new ForbiddenException('You can only change the status of your own contracts');
     }
 
     // Validate status transitions
@@ -247,7 +254,7 @@ export class ContractsService {
     return updated;
   }
 
-  async findContractInvoices(contractId: string) {
+  async findContractInvoices(contractId: string, user: AuthenticatedUser) {
     const contract = await this.prisma.contract.findUnique({
       where: { id: contractId },
     });
@@ -256,13 +263,20 @@ export class ContractsService {
       throw new NotFoundException(`Contract ${contractId} not found`);
     }
 
+    // Agent can only view invoices for own contracts
+    const isAgent =
+      user.roles && !user.roles.includes('admin') && !user.roles.includes('manager');
+    if (isAgent && contract.agentId !== user.sub) {
+      throw new ForbiddenException('You can only view invoices for your own contracts');
+    }
+
     return this.prisma.invoice.findMany({
       where: { contractId },
       orderBy: { dueDate: 'asc' },
     });
   }
 
-  async generateInvoices(contractId: string, dto: GenerateInvoicesDto) {
+  async generateInvoices(contractId: string, dto: GenerateInvoicesDto, user: AuthenticatedUser) {
     const contract = await this.prisma.contract.findUnique({
       where: { id: contractId },
       include: { invoices: true },
@@ -270,6 +284,13 @@ export class ContractsService {
 
     if (!contract) {
       throw new NotFoundException(`Contract ${contractId} not found`);
+    }
+
+    // Agent can only generate invoices for own contracts
+    const isAgent =
+      user.roles && !user.roles.includes('admin') && !user.roles.includes('manager');
+    if (isAgent && contract.agentId !== user.sub) {
+      throw new ForbiddenException('You can only generate invoices for your own contracts');
     }
 
     if (contract.status === ContractStatus.CANCELLED) {

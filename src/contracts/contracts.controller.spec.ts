@@ -84,19 +84,22 @@ describe('ContractsController', () => {
 
   it('should change contract status', async () => {
     mockService.changeStatus.mockResolvedValue({ id: 'c1', status: ContractStatus.ACTIVE });
-    const result = await controller.changeStatus('c1', { status: ContractStatus.ACTIVE });
+    const result = await controller.changeStatus('c1', { status: ContractStatus.ACTIVE }, adminUser);
     expect(result.status).toBe(ContractStatus.ACTIVE);
+    expect(mockService.changeStatus).toHaveBeenCalledWith('c1', { status: ContractStatus.ACTIVE }, adminUser);
   });
 
   it('should list contract invoices', async () => {
     mockService.findContractInvoices.mockResolvedValue([]);
-    const result = await controller.findContractInvoices('c1');
+    const result = await controller.findContractInvoices('c1', adminUser);
     expect(result).toEqual([]);
+    expect(mockService.findContractInvoices).toHaveBeenCalledWith('c1', adminUser);
   });
 
   it('should generate invoices', async () => {
     mockService.generateInvoices.mockResolvedValue([{ id: 'inv1' }]);
-    const result = await controller.generateInvoices('c1', {});
+    const result = await controller.generateInvoices('c1', {}, adminUser);
     expect(result).toHaveLength(1);
+    expect(mockService.generateInvoices).toHaveBeenCalledWith('c1', {}, adminUser);
   });
 });
