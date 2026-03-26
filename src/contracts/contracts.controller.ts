@@ -97,8 +97,9 @@ export class ContractsController {
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateContractDto,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.contractsService.update(id, dto);
+    return this.contractsService.update(id, dto, user);
   }
 
   @Patch(':id/status')
