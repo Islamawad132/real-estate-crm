@@ -18,11 +18,15 @@ import LeadsListPage from './pages/leads/LeadsListPage'
 import LeadsKanbanPage from './pages/leads/LeadsKanbanPage'
 import LeadDetailPage from './pages/leads/LeadDetailPage'
 import LeadFormPage from './pages/leads/LeadFormPage'
-import ContractsPage from './pages/ContractsPage'
-import InvoicesPage from './pages/InvoicesPage'
-import ReportsPage from './pages/ReportsPage'
-import AgentsPage from './pages/AgentsPage'
-import SettingsPage from './pages/SettingsPage'
+import ContractsListPage from './pages/contracts/ContractsListPage'
+import ContractDetailPage from './pages/contracts/ContractDetailPage'
+import ContractFormPage from './pages/contracts/ContractFormPage'
+import InvoicesListPage from './pages/invoices/InvoicesListPage'
+import InvoiceDetailPage from './pages/invoices/InvoiceDetailPage'
+import ReportsPage from './pages/reports/ReportsPage'
+import AgentsListPage from './pages/agents/AgentsListPage'
+import AgentDetailPage from './pages/agents/AgentDetailPage'
+import SettingsPage from './pages/settings/SettingsPage'
 
 export default function App() {
   return (
@@ -57,10 +61,15 @@ export default function App() {
                 <Route path="leads/new" element={<LeadFormPage />} />
                 <Route path="leads/:id" element={<LeadDetailPage />} />
                 <Route path="leads/:id/edit" element={<LeadFormPage />} />
-                <Route path="contracts" element={<ContractsPage />} />
-                <Route path="invoices" element={<InvoicesPage />} />
+                <Route path="contracts" element={<ContractsListPage />} />
+                <Route path="contracts/new" element={<ContractFormPage />} />
+                <Route path="contracts/:id" element={<ContractDetailPage />} />
+                <Route path="contracts/:id/edit" element={<ContractFormPage />} />
+                <Route path="invoices" element={<InvoicesListPage />} />
+                <Route path="invoices/:id" element={<InvoiceDetailPage />} />
                 <Route path="reports" element={<ReportsPage />} />
-                <Route path="agents" element={<AgentsPage />} />
+                <Route path="agents" element={<AgentsListPage />} />
+                <Route path="agents/:id" element={<AgentDetailPage />} />
                 <Route path="settings" element={<SettingsPage />} />
               </Route>
             </Routes>
