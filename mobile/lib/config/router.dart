@@ -13,6 +13,8 @@ import '../screens/leads/lead_form_screen.dart';
 import '../screens/clients/clients_list_screen.dart';
 import '../screens/clients/client_detail_screen.dart';
 import '../screens/clients/client_form_screen.dart';
+import '../screens/notifications/notifications_screen.dart';
+import '../screens/notifications/notification_preferences_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../widgets/app_shell.dart';
 
@@ -118,6 +120,20 @@ final routerProvider = Provider<GoRouter>((ref) {
                     ),
                   ),
                 ],
+              ),
+            ],
+          ),
+          GoRoute(
+            path: '/notifications',
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: NotificationsScreen(),
+            ),
+            routes: [
+              GoRoute(
+                path: 'preferences',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) =>
+                    const NotificationPreferencesScreen(),
               ),
             ],
           ),
