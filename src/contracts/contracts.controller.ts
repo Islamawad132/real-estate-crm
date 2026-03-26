@@ -112,8 +112,9 @@ export class ContractsController {
   changeStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: ChangeContractStatusDto,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.contractsService.changeStatus(id, dto);
+    return this.contractsService.changeStatus(id, dto, user);
   }
 
   @Get(':id/invoices')
@@ -121,8 +122,11 @@ export class ContractsController {
   @ApiParam({ name: 'id', type: String })
   @ApiResponse({ status: 200, description: 'Contract invoices' })
   @ApiResponse({ status: 404, description: 'Contract not found' })
-  findContractInvoices(@Param('id', ParseUUIDPipe) id: string) {
-    return this.contractsService.findContractInvoices(id);
+  findContractInvoices(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.contractsService.findContractInvoices(id, user);
   }
 
   @Post(':id/generate-invoices')
@@ -136,7 +140,8 @@ export class ContractsController {
   generateInvoices(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: GenerateInvoicesDto,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.contractsService.generateInvoices(id, dto);
+    return this.contractsService.generateInvoices(id, dto, user);
   }
 }
