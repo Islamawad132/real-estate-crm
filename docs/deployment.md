@@ -19,25 +19,29 @@ cd real-estate-crm
 cp .env.example .env
 # Edit .env with your production values (database password, Authme secrets, etc.)
 
-# 3. Deploy
-chmod +x scripts/deploy.sh
-./scripts/deploy.sh deploy
+# 3. Build the Docker image
+docker build -t real-estate-crm:latest .
+
+# 4. Run database migrations
+docker run --rm --env-file .env real-estate-crm:latest npx prisma migrate deploy
+
+# 5. Start the application
+docker compose up -d
 ```
 
 The application will be available at:
 
 | URL | Service |
 |-----|---------|
-| `http://your-server/admin` | Admin Portal |
-| `http://your-server/agent` | Agent Portal |
-| `http://your-server/api/docs` | Swagger API Docs |
-| `http://your-server/api/health` | Health Check |
+| `http://your-server:3000` | Backend API + Portals |
+| `http://your-server:3000/api/docs` | Swagger API Docs |
 
 ## Architecture
 
 ```
                     +-------------------+
-                    |    Nginx :80      |
+                    |  Reverse Proxy    |
+                    |  (Nginx / LB)    |
                     +--------+----------+
                              |
              +---------------+---------------+
@@ -54,6 +58,8 @@ The application will be available at:
                                       |   :5432     |
                                       +-------------+
 ```
+
+The production Docker image bundles the NestJS backend with both portal static builds in a single container.
 
 ## Docker Image Build
 
@@ -84,40 +90,28 @@ Copy `.env.example` and configure for production:
 | `AUTHME_REALM` | Authme realm | `real-estate` |
 | `AUTHME_CLIENT_ID` | Authme client ID | `crm-backend` |
 | `AUTHME_CLIENT_SECRET` | Authme client secret | `<secret>` |
-| `ADMIN_PORTAL_URL` | Admin UI URL (for CORS) | `https://crm.example.com/admin` |
-| `AGENT_PORTAL_URL` | Agent UI URL (for CORS) | `https://crm.example.com/agent` |
+| `ADMIN_PORTAL_URL` | Admin UI URL (for CORS) | `https://admin.yourdomain.com` |
+| `AGENT_PORTAL_URL` | Agent UI URL (for CORS) | `https://agent.yourdomain.com` |
 | `PORT` | Backend port | `3000` |
 | `NODE_ENV` | Must be `production` | `production` |
 | `UPLOAD_DIR` | File upload directory | `/app/uploads` |
 
-## Deploy Script Commands
+For Docker Compose production deployments, also set:
 
-```bash
-# Full deploy (backup DB, build images, migrate, start)
-./scripts/deploy.sh deploy
-
-# Check service status and health
-./scripts/deploy.sh status
-
-# View logs
-./scripts/deploy.sh logs
-
-# Backup database
-./scripts/deploy.sh backup
-
-# Rollback
-./scripts/deploy.sh rollback
-
-# Clean up old Docker images
-./scripts/deploy.sh cleanup
-```
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `POSTGRES_USER` | Database user | `crm_user` |
+| `POSTGRES_PASSWORD` | Database password | `STRONG_PASSWORD` |
+| `POSTGRES_DB` | Database name | `real_estate_crm` |
+| `HTTP_PORT` | Host HTTP port | `80` |
+| `HTTPS_PORT` | Host HTTPS port | `443` |
 
 ## Database Migrations
 
-Migrations run automatically during deploy. To run them manually:
+Apply migrations before starting (or after deploying a new version):
 
 ```bash
-# Inside Docker
+# Inside a running container
 docker compose exec app npx prisma migrate deploy
 
 # Or with a standalone container
@@ -137,17 +131,13 @@ docker compose exec app npx ts-node prisma/seed.ts
 
 For production HTTPS, you have two options:
 
-### Option A: Reverse proxy in front (recommended)
+### Option A: TLS-terminating reverse proxy (recommended)
 
-Place Cloudflare, AWS ALB, or another TLS-terminating proxy in front of this stack. The Nginx container listens on port 80; your upstream proxy handles TLS.
+Place Cloudflare, AWS ALB, or another TLS-terminating proxy in front of this stack. The application container listens on port 3000; your upstream proxy handles TLS.
 
-### Option B: Certbot with Nginx
+### Option B: Nginx with Certbot
 
-1. Mount a certificates volume in `docker-compose.yml`
-2. Add an SSL server block in `nginx/nginx.conf`
-3. Use Certbot to obtain and renew certificates
-
-Sample Nginx SSL block:
+Sample Nginx configuration:
 
 ```nginx
 server {
@@ -158,7 +148,7 @@ server {
     ssl_certificate_key /etc/ssl/private/crm.key;
 
     location /api/ {
-        proxy_pass http://app:3000;
+        proxy_pass http://127.0.0.1:3000;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -167,7 +157,7 @@ server {
     }
 
     location / {
-        proxy_pass http://app:3000;
+        proxy_pass http://127.0.0.1:3000;
     }
 }
 ```
@@ -181,10 +171,10 @@ server {
 docker compose exec db pg_dump -U postgres real_estate_crm > backup_$(date +%Y%m%d).sql
 
 # Restore
-cat backup_20260326.sql | docker compose exec -T db psql -U postgres real_estate_crm
+cat backup.sql | docker compose exec -T db psql -U postgres real_estate_crm
 
 # Automated daily backups (add to crontab)
-# 0 2 * * * cd /path/to/real-estate-crm && ./scripts/deploy.sh backup
+# 0 2 * * * cd /path/to/real-estate-crm && docker compose exec -T db pg_dump -U postgres real_estate_crm > /backups/crm_$(date +\%Y\%m\%d).sql
 ```
 
 ### File Uploads
@@ -198,29 +188,7 @@ docker run --rm -v crm_uploads:/data -v $(pwd):/backup alpine \
 
 ## Monitoring
 
-### Health Check
-
-The `/api/health` endpoint returns:
-
-```json
-{
-  "status": "ok",
-  "timestamp": "2026-03-26T00:00:00.000Z",
-  "uptime": 12345.67,
-  "database": "connected",
-  "version": "0.0.1"
-}
-```
-
-### Docker Health Checks
-
-Both the `app` and `db` services have built-in Docker health checks:
-
-```bash
-docker compose ps
-```
-
-### Recommended Monitoring Stack
+### Recommended Stack
 
 | Aspect | Tool |
 |--------|------|
@@ -229,6 +197,14 @@ docker compose ps
 | Log aggregation | Structured JSON logs (Pino) via ELK or Loki |
 | Uptime monitoring | UptimeRobot / Pingdom |
 | Database monitoring | pgAdmin / pg_stat_statements |
+
+### Docker Health Checks
+
+The `db` service has a built-in health check. Monitor with:
+
+```bash
+docker compose ps
+```
 
 ## CI/CD Pipeline
 
@@ -240,7 +216,7 @@ The project includes GitHub Actions (`.github/workflows/ci.yml`) that run on eve
 4. **Mobile (Flutter)** -- Analyze, test
 5. **Docker Build** -- Verify the production image builds successfully
 
-To add automated deployment, extend the CI pipeline with a deploy job that runs after the Docker build succeeds.
+To add automated deployment, extend the CI pipeline with a deploy job after the Docker build succeeds.
 
 ## Troubleshooting
 
