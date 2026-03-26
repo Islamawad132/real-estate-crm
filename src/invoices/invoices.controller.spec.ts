@@ -2,6 +2,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { InvoicesController } from './invoices.controller.js';
 import { InvoicesService } from './invoices.service.js';
 import { InvoiceStatus, PaymentMethod } from '@prisma/client';
+import type { AuthenticatedUser } from '../common/decorators/current-user.decorator.js';
+
+const mockUser: AuthenticatedUser = {
+  sub: 'admin-uuid-001',
+  email: 'admin@example.com',
+  roles: ['admin'],
+} as AuthenticatedUser;
 
 const mockService = {
   create: jest.fn(),
@@ -56,9 +63,9 @@ describe('InvoicesController', () => {
         dueDate: '2026-04-01',
       };
 
-      const result = await controller.create(dto as any);
+      const result = await controller.create(dto as any, mockUser);
       expect(result).toEqual(sampleInvoice);
-      expect(mockService.create).toHaveBeenCalledWith(dto);
+      expect(mockService.create).toHaveBeenCalledWith(dto, mockUser);
     });
   });
 
@@ -73,9 +80,9 @@ describe('InvoicesController', () => {
       };
       mockService.findAll.mockResolvedValue(paginated);
 
-      const result = await controller.findAll({} as any);
+      const result = await controller.findAll({} as any, mockUser);
       expect(result).toEqual(paginated);
-      expect(mockService.findAll).toHaveBeenCalledWith({});
+      expect(mockService.findAll).toHaveBeenCalledWith({}, mockUser);
     });
   });
 
@@ -90,10 +97,10 @@ describe('InvoicesController', () => {
       };
       mockService.getStats.mockResolvedValue(stats);
 
-      const result = await controller.getStats();
+      const result = await controller.getStats(mockUser);
       expect(result.total).toBe(20);
       expect(result.totalCollected).toBe(150000);
-      expect(mockService.getStats).toHaveBeenCalledTimes(1);
+      expect(mockService.getStats).toHaveBeenCalledWith(mockUser);
     });
   });
 
@@ -102,9 +109,9 @@ describe('InvoicesController', () => {
       const overdueList = [{ ...sampleInvoice, dueDate: new Date('2025-01-01') }];
       mockService.findOverdue.mockResolvedValue(overdueList);
 
-      const result = await controller.findOverdue();
+      const result = await controller.findOverdue(mockUser);
       expect(result).toEqual(overdueList);
-      expect(mockService.findOverdue).toHaveBeenCalledTimes(1);
+      expect(mockService.findOverdue).toHaveBeenCalledWith(mockUser);
     });
   });
 
@@ -112,16 +119,16 @@ describe('InvoicesController', () => {
     it('should return upcoming invoices with default 30 days', async () => {
       mockService.findUpcoming.mockResolvedValue([sampleInvoice]);
 
-      const result = await controller.findUpcoming(undefined);
+      const result = await controller.findUpcoming(undefined, mockUser);
       expect(result).toHaveLength(1);
-      expect(mockService.findUpcoming).toHaveBeenCalledWith(30);
+      expect(mockService.findUpcoming).toHaveBeenCalledWith(30, mockUser);
     });
 
     it('should pass custom days to service', async () => {
       mockService.findUpcoming.mockResolvedValue([]);
 
-      await controller.findUpcoming('7');
-      expect(mockService.findUpcoming).toHaveBeenCalledWith(7);
+      await controller.findUpcoming('7', mockUser);
+      expect(mockService.findUpcoming).toHaveBeenCalledWith(7, mockUser);
     });
   });
 
@@ -133,9 +140,9 @@ describe('InvoicesController', () => {
       };
       mockService.findOne.mockResolvedValue(withContract);
 
-      const result = await controller.findOne(sampleInvoice.id);
+      const result = await controller.findOne(sampleInvoice.id, mockUser);
       expect(result.id).toBe(sampleInvoice.id);
-      expect(mockService.findOne).toHaveBeenCalledWith(sampleInvoice.id);
+      expect(mockService.findOne).toHaveBeenCalledWith(sampleInvoice.id, mockUser);
     });
   });
 
@@ -144,9 +151,9 @@ describe('InvoicesController', () => {
       const updated = { ...sampleInvoice, amount: 60000 };
       mockService.update.mockResolvedValue(updated);
 
-      const result = await controller.update(sampleInvoice.id, { amount: 60000 });
+      const result = await controller.update(sampleInvoice.id, { amount: 60000 }, mockUser);
       expect(result.amount).toBe(60000);
-      expect(mockService.update).toHaveBeenCalledWith(sampleInvoice.id, { amount: 60000 });
+      expect(mockService.update).toHaveBeenCalledWith(sampleInvoice.id, { amount: 60000 }, mockUser);
     });
   });
 
@@ -165,9 +172,9 @@ describe('InvoicesController', () => {
         paymentMethod: PaymentMethod.BANK_TRANSFER,
       };
 
-      const result = await controller.recordPayment(sampleInvoice.id, dto as any);
+      const result = await controller.recordPayment(sampleInvoice.id, dto as any, mockUser);
       expect(result.status).toBe(InvoiceStatus.PAID);
-      expect(mockService.recordPayment).toHaveBeenCalledWith(sampleInvoice.id, dto);
+      expect(mockService.recordPayment).toHaveBeenCalledWith(sampleInvoice.id, dto, mockUser);
     });
   });
 
@@ -176,9 +183,9 @@ describe('InvoicesController', () => {
       const cancelled = { ...sampleInvoice, status: InvoiceStatus.CANCELLED };
       mockService.cancel.mockResolvedValue(cancelled);
 
-      const result = await controller.cancel(sampleInvoice.id);
+      const result = await controller.cancel(sampleInvoice.id, mockUser);
       expect(result.status).toBe(InvoiceStatus.CANCELLED);
-      expect(mockService.cancel).toHaveBeenCalledWith(sampleInvoice.id);
+      expect(mockService.cancel).toHaveBeenCalledWith(sampleInvoice.id, mockUser);
     });
   });
 });
