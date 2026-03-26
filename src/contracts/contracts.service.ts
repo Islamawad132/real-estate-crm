@@ -166,10 +166,17 @@ export class ContractsService {
     return contract;
   }
 
-  async update(id: string, dto: UpdateContractDto) {
+  async update(id: string, dto: UpdateContractDto, user: AuthenticatedUser) {
     const existing = await this.prisma.contract.findUnique({ where: { id } });
     if (!existing) {
       throw new NotFoundException(`Contract ${id} not found`);
+    }
+
+    // Agent can only update own contracts
+    const isAgent =
+      user.roles && !user.roles.includes('admin') && !user.roles.includes('manager');
+    if (isAgent && existing.agentId !== user.sub) {
+      throw new ForbiddenException('You can only update your own contracts');
     }
 
     return this.prisma.contract.update({
