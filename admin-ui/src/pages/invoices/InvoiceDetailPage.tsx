@@ -58,6 +58,7 @@ export default function InvoiceDetailPage() {
   }
 
   function handleExport() {
+    if (!invoice) return
     const invoiceData = {
       id: invoice.id,
       amount: invoice.amount,

@@ -13,7 +13,6 @@ import {
 import { Button, LoadingSpinner } from '../../components/ui'
 import { useClientDetail, useClientHistory } from '../../hooks/useClients'
 import { formatDate, formatCurrency } from '../../utils'
-import type { LeadStatus } from '../../types/lead'
 
 const statusColor: Record<string, string> = {
   NEW: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',

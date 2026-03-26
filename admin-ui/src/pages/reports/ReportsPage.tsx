@@ -203,7 +203,7 @@ export default function ReportsPage() {
                     <XAxis dataKey="period" tick={{ fontSize: 11 }} />
                     <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 11 }} />
                     <Tooltip
-                      formatter={(value: number) => [formatCurrency(value), 'Revenue']}
+                      formatter={(value: unknown) => [formatCurrency(Number(value)), 'Revenue']}
                       contentStyle={{
                         backgroundColor: 'rgba(17, 24, 39, 0.9)',
                         border: 'none',
@@ -359,7 +359,7 @@ export default function ReportsPage() {
                         outerRadius={90}
                         dataKey="converted"
                         nameKey="source"
-                        label={({ source, conversionRate }) => `${source}: ${conversionRate}%`}
+                        label={({ payload }: { payload?: Record<string, unknown> }) => `${payload?.source ?? ''}: ${payload?.conversionRate ?? 0}%`}
                         labelLine={false}
                       >
                         {leadConversion.data.bySource.map((_, index) => (
@@ -503,7 +503,7 @@ export default function ReportsPage() {
                         outerRadius={90}
                         dataKey="total"
                         nameKey="type"
-                        label={({ type, total }) => `${type}: ${total}`}
+                        label={({ payload }: { payload?: Record<string, unknown> }) => `${payload?.type ?? ''}: ${payload?.total ?? 0}`}
                         labelLine={false}
                       >
                         {propertyReport.data.byType.map((_, index) => (

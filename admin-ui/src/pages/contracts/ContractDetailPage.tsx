@@ -4,7 +4,6 @@ import {
   ArrowLeft,
   Edit,
   FileText,
-  Calendar,
   DollarSign,
   User,
   Home,
@@ -203,10 +202,10 @@ export default function ContractDetailPage() {
                 <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
                   <dt className="text-xs font-medium text-gray-500 mb-1">Payment Terms</dt>
                   <dd className="text-gray-700 dark:text-gray-300 text-xs">
-                    {contract.paymentTerms.installments && (
+                    {Boolean(contract.paymentTerms.installments) && (
                       <span>{String(contract.paymentTerms.installments)} installments</span>
                     )}
-                    {contract.paymentTerms.frequency && (
+                    {Boolean(contract.paymentTerms.frequency) && (
                       <span> ({String(contract.paymentTerms.frequency)})</span>
                     )}
                   </dd>

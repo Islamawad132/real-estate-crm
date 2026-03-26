@@ -358,7 +358,7 @@ export default function InvoicesListPage() {
       {/* Table */}
       <DataTable
         columns={columns}
-        data={(data?.data ?? []) as Record<string, unknown>[]}
+        data={(data?.data ?? []) as unknown as Record<string, unknown>[]}
         loading={isLoading}
         page={filter.page}
         pageSize={filter.pageSize}

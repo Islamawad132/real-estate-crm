@@ -82,8 +82,8 @@ export function RevenueChart({ data, isLoading }: Props) {
                 className="text-gray-500 dark:text-gray-400"
               />
               <Tooltip
-                formatter={(value: number) => [formatCurrency(value), 'Revenue']}
-                labelFormatter={formatDate}
+                formatter={(value: unknown) => [formatCurrency(Number(value)), 'Revenue']}
+                labelFormatter={(label: unknown) => formatDate(String(label))}
                 contentStyle={{
                   backgroundColor: 'rgba(17, 24, 39, 0.9)',
                   border: 'none',

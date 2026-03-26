@@ -73,7 +73,7 @@ export default function ClientsListPage() {
       render: (_v, row) => (
         <div className="flex flex-col">
           <span className="font-medium">{String(row.firstName)} {String(row.lastName)}</span>
-          {row.email && (
+          {Boolean(row.email) && (
             <span className="flex items-center gap-1 text-xs text-gray-500">
               <Mail size={10} /> {String(row.email)}
             </span>
@@ -197,7 +197,7 @@ export default function ClientsListPage() {
       {/* Table */}
       <DataTable
         columns={columns}
-        data={(data?.data ?? []) as Record<string, unknown>[]}
+        data={(data?.data ?? []) as unknown as Record<string, unknown>[]}
         loading={isLoading}
         page={filter.page}
         pageSize={filter.pageSize}
