@@ -7,8 +7,12 @@ import '../screens/auth/login_screen.dart';
 import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/properties/properties_screen.dart';
 import '../screens/properties/property_detail_screen.dart';
-import '../screens/leads/leads_screen.dart';
-import '../screens/clients/clients_screen.dart';
+import '../screens/leads/leads_list_screen.dart';
+import '../screens/leads/lead_detail_screen.dart';
+import '../screens/leads/lead_form_screen.dart';
+import '../screens/clients/clients_list_screen.dart';
+import '../screens/clients/client_detail_screen.dart';
+import '../screens/clients/client_form_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../widgets/app_shell.dart';
 
@@ -62,14 +66,60 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/leads',
             pageBuilder: (context, state) => const NoTransitionPage(
-              child: LeadsScreen(),
+              child: LeadsListScreen(),
             ),
+            routes: [
+              GoRoute(
+                path: 'new',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) => const LeadFormScreen(),
+              ),
+              GoRoute(
+                path: ':id',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) => LeadDetailScreen(
+                  leadId: state.pathParameters['id']!,
+                ),
+                routes: [
+                  GoRoute(
+                    path: 'edit',
+                    parentNavigatorKey: _rootNavigatorKey,
+                    builder: (context, state) => LeadFormScreen(
+                      leadId: state.pathParameters['id']!,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
           GoRoute(
             path: '/clients',
             pageBuilder: (context, state) => const NoTransitionPage(
-              child: ClientsScreen(),
+              child: ClientsListScreen(),
             ),
+            routes: [
+              GoRoute(
+                path: 'new',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) => const ClientFormScreen(),
+              ),
+              GoRoute(
+                path: ':id',
+                parentNavigatorKey: _rootNavigatorKey,
+                builder: (context, state) => ClientDetailScreen(
+                  clientId: state.pathParameters['id']!,
+                ),
+                routes: [
+                  GoRoute(
+                    path: 'edit',
+                    parentNavigatorKey: _rootNavigatorKey,
+                    builder: (context, state) => ClientFormScreen(
+                      clientId: state.pathParameters['id']!,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
           GoRoute(
             path: '/profile',
