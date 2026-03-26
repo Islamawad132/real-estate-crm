@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, LeadStatus, LeadActivityType } from '@prisma/client';
+import { Prisma, LeadStatus, LeadActivityType, UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateLeadDto } from './dto/create-lead.dto.js';
 import { UpdateLeadDto } from './dto/update-lead.dto.js';
@@ -152,6 +152,14 @@ export class LeadsService {
 
   async assignAgent(id: string, agentId: string) {
     await this.ensureExists(id);
+
+    const agent = await this.prisma.user.findUnique({ where: { id: agentId } });
+    if (!agent) {
+      throw new NotFoundException(`User with ID "${agentId}" not found`);
+    }
+    if (agent.role === UserRole.ADMIN) {
+      throw new BadRequestException('Cannot assign an ADMIN user as an agent');
+    }
 
     return this.prisma.lead.update({
       where: { id },
