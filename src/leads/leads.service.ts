@@ -27,6 +27,26 @@ export class LeadsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreateLeadDto, performedBy: string) {
+    // Validate client exists
+    const client = await this.prisma.client.findUnique({
+      where: { id: dto.clientId },
+      select: { id: true },
+    });
+    if (!client) {
+      throw new NotFoundException(`Client ${dto.clientId} not found`);
+    }
+
+    // Validate property exists (optional field)
+    if (dto.propertyId) {
+      const property = await this.prisma.property.findUnique({
+        where: { id: dto.propertyId },
+        select: { id: true },
+      });
+      if (!property) {
+        throw new NotFoundException(`Property ${dto.propertyId} not found`);
+      }
+    }
+
     const lead = await this.prisma.lead.create({
       data: {
         ...dto,
