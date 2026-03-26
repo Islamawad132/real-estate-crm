@@ -125,7 +125,7 @@ export class UploadsController {
   @ApiParam({ name: 'filename', description: 'Filename' })
   @ApiResponse({ status: 200, description: 'File content' })
   @ApiResponse({ status: 404, description: 'File not found' })
-  serveFile(
+  async serveFile(
     @Param('type') type: string,
     @Param('filename') filename: string,
     @Res() res: Response,
@@ -135,7 +135,7 @@ export class UploadsController {
       return res.status(400).json({ message: 'Invalid file type' });
     }
 
-    const filePath = this.uploadsService.getFilePath(
+    const filePath = await this.uploadsService.getFilePath(
       type as 'images' | 'thumbnails' | 'documents',
       filename,
     );
