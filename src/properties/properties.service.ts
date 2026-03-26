@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, UserRole } from '@prisma/client';
+import { Prisma, PropertyStatus, UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreatePropertyDto } from './dto/create-property.dto.js';
 import { UpdatePropertyDto } from './dto/update-property.dto.js';
@@ -100,12 +100,12 @@ export class PropertiesService {
     });
   }
 
-  async changeStatus(id: string, status: string) {
+  async changeStatus(id: string, status: PropertyStatus) {
     await this.ensureExists(id);
 
     return this.prisma.property.update({
       where: { id },
-      data: { status: status as any },
+      data: { status },
     });
   }
 
