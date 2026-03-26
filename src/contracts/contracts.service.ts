@@ -69,6 +69,7 @@ export class ContractsService {
         include: {
           property: true,
           client: true,
+          agent: true,
         },
       });
 
@@ -133,6 +134,7 @@ export class ContractsService {
         include: {
           property: { select: { id: true, title: true, type: true, status: true, city: true } },
           client: { select: { id: true, firstName: true, lastName: true, phone: true } },
+          agent: { select: { id: true, firstName: true, lastName: true, email: true } },
           _count: { select: { invoices: true } },
         },
       }),
@@ -148,6 +150,7 @@ export class ContractsService {
       include: {
         property: true,
         client: true,
+        agent: true,
         invoices: { orderBy: { dueDate: 'asc' } },
       },
     });
@@ -194,6 +197,7 @@ export class ContractsService {
       include: {
         property: true,
         client: true,
+        agent: true,
       },
     });
   }
@@ -400,6 +404,7 @@ export class ContractsService {
       include: {
         property: { select: { id: true, title: true, city: true } },
         client: { select: { id: true, firstName: true, lastName: true, phone: true } },
+        agent: { select: { id: true, firstName: true, lastName: true, email: true } },
       },
     });
   }
