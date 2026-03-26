@@ -13,7 +13,7 @@ import { LoadingSpinner } from './ui/LoadingSpinner'
 import { EmptyState } from './ui/EmptyState'
 import { Badge } from './ui/Badge'
 import { cn } from '../utils'
-import type { Activity, ActivityEntityType } from '../types'
+import type { Activity, ActivityEntityType, PaginatedResponse } from '../types'
 
 // ─── helpers ──────────────────────────────────────────────────────
 
@@ -109,11 +109,12 @@ export function ActivityLog({ entityType, entityId, limit = 20, className }: Act
 
   const { data, isLoading, error } = useQuery({
     queryKey,
-    queryFn: () => {
+    queryFn: async () => {
       if (entityType && entityId) {
         return activitiesApi.byEntity(entityType, entityId, { pageSize: limit })
       }
-      return activitiesApi.recent(limit)
+      const items = await activitiesApi.recent(limit)
+      return { data: items, total: items.length, page: 1, pageSize: limit, totalPages: 1 } as PaginatedResponse<Activity>
     },
   })
 
@@ -127,7 +128,7 @@ export function ActivityLog({ entityType, entityId, limit = 20, className }: Act
     )
   }
 
-  const activities: Activity[] = Array.isArray(data) ? data : (data as { data: Activity[] })?.data ?? []
+  const activities: Activity[] = data?.data ?? []
 
   if (!activities.length) {
     return (

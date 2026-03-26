@@ -22,7 +22,7 @@ interface DataTableProps<T> {
   className?: string
 }
 
-export function DataTable<T extends Record<string, unknown>>({
+export function DataTable<T extends object>({
   columns,
   data,
   loading,
@@ -93,8 +93,8 @@ export function DataTable<T extends Record<string, unknown>>({
                     className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap"
                   >
                     {col.render
-                      ? col.render(row[col.key], row)
-                      : (String(row[col.key] ?? '-'))}
+                      ? col.render((row as Record<string, unknown>)[col.key], row)
+                      : (String((row as Record<string, unknown>)[col.key] ?? '-'))}
                   </td>
                 ))}
               </tr>
