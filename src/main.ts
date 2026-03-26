@@ -80,6 +80,18 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
+  // Warn about insecure default credentials in production
+  const dbUrl = process.env['DATABASE_URL'] ?? '';
+  const isProduction = process.env['NODE_ENV'] === 'production';
+  const hasDefaultCreds =
+    dbUrl.includes(':postgres@') || dbUrl.includes(':password@');
+  if (isProduction && hasDefaultCreds) {
+    console.warn(
+      '\n⚠️  WARNING: Database credentials appear to use default/weak values.\n' +
+        '   This is a security risk in production. Update POSTGRES_USER and POSTGRES_PASSWORD in your .env file.\n',
+    );
+  }
+
   const port = process.env['PORT'] ?? 3000;
   await app.listen(port);
   console.log(`Real Estate CRM API is running on http://localhost:${port}`);
